@@ -102,11 +102,11 @@ namespace prb {
 		void msbinfow(std::wstring infostr);
 		void msbinfow();
 
-		template<typename... Args> void pr(Args... args) { std::wstring wstr = stru::compose(args...);	ss << wstr; }
-		template<typename... Args> void prt(Args... args) { std::wstring wstr = stru::compose(args...);	rtss << wstr; }
+		template<typename... Args> void pr(Args... args) { std::wstring wstr = stru::composew(args...);	ss << wstr; }
+		template<typename... Args> void prt(Args... args) { std::wstring wstr = stru::composew(args...);	rtss << wstr; }
 		
-		template<typename... Args> void prln(Args... args) { std::wstring wstr = stru::compose(args..., "\n");	rtss << wstr; }
-		template<typename... Args> void prtln(Args... args) { std::wstring wstr = stru::compose(args..., "\n");	rtss << wstr; }
+		template<typename... Args> void prln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	rtss << wstr; }
+		template<typename... Args> void prtln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	rtss << wstr; }
 
 		std::wstring tows(const wchar_t* c);
 		std::wstring tows(const char* c);
@@ -118,17 +118,17 @@ namespace prb {
 
 		void mbe(std::wstring const& errstr);
 		void mbe(std::string const& errstr);
-		template<typename... Args> void mbe(Args... args) { std::wstring wstr = stru::compose(args...);	mbe(wstr); }
+		template<typename... Args> void mbe(Args... args) { std::wstring wstr = stru::composew(args...);	mbe(wstr); }
 		void mbe();
 
 		void mbi(std::wstring const& errstr);
 		void mbi(std::string const& errstr);
-		template<typename... Args> void mbi(Args... args) { std::wstring wstr = stru::compose(args...);	mbi(wstr); }
+		template<typename... Args> void mbi(Args... args) { std::wstring wstr = stru::composew(args...);	mbi(wstr); }
 		void mbi();
 
 
 		void outStr(std::wstring const& str);
-		template<typename... Args> void outStr(Args... args) { std::wstring wstr = stru::compose(args...);	outStr(wstr); }
+		template<typename... Args> void outStr(Args... args) { std::wstring wstr = stru::composew(args...);	outStr(wstr); }
 		void outStr();
 	}
 
