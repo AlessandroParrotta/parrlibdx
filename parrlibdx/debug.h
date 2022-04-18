@@ -7,7 +7,7 @@
 #include <sstream>
 #include <mutex>
 
-#include <parrlib/math/stringutils.h>
+#include <parrlibcore/stringutils.h>
 
 #include "TextRenderer.h"
 

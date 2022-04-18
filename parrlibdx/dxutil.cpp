@@ -1,7 +1,8 @@
 #include "dxutil.h"
 
-#include <parrlib/constants.h>
-#include <parrlib/math/utils2d/utils2d.h>
+#include <parrlibcore/utils2d/utils2d.h>
+
+#include <parrlibcore/constants.h>
 
 #include "common.h"
 #include "debug.h"

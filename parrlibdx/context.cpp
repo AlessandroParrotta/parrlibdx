@@ -2,8 +2,8 @@
 
 #include <windows.h>
 
-#include <parrlib/math/timer.h>
-#include <parrlib/math/otherutil.h>
+#include <parrlibcore/timer.h>
+#include <parrlibcore/otherutil.h>
 
 #include "common.h"
 #include "Input.h"

@@ -3,17 +3,17 @@
 #ifndef parrlibdx_h
 #define parrlibdx_h
 
-#include <parrlib/math/vector2f.h>
-#include <parrlib/math/vector3f.h>
-#include <parrlib/math/vector4f.h>
+#include <parrlibcore/vector2f.h>
+#include <parrlibcore/vector3f.h>
+#include <parrlibcore/vector4f.h>
 
-#include <parrlib/math/matrix2f.h>
-#include <parrlib/math/matrix3f.h>
-#include <parrlib/math/matrix4f.h>
+#include <parrlibcore/matrix2f.h>
+#include <parrlibcore/matrix3f.h>
+#include <parrlibcore/matrix4f.h>
 
-#include <parrlib/math/otherutil.h>
-#include <parrlib/math/stringutils.h>
-#include <parrlib/math/utils2d/utils2d.h>
+#include <parrlibcore/otherutil.h>
+#include <parrlibcore/stringutils.h>
+#include <parrlibcore/utils2d/utils2d.h>
 
 #include "common.h"
 #include "Input.h"

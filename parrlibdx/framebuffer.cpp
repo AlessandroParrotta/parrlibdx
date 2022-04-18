@@ -1,6 +1,6 @@
 #include "framebuffer.h"
 
-#include <parrlib/constants.h>
+#include <parrlibcore/constants.h>
 
 #include "common.h"
 //#include "vertexbuffer.h"

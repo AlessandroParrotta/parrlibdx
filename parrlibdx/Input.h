@@ -2,9 +2,9 @@
 
 #include <windows.h>
 
-#include <parrlib/math/vector2f.h>
-#include <parrlib/math/vector3f.h>
-#include <parrlib/math/utils2d/axisalignedboundingbox2d.h>
+#include <parrlibcore/vector2f.h>
+#include <parrlibcore/vector3f.h>
+#include <parrlibcore/utils2d/axisalignedboundingbox2d.h>
 
 namespace prb {
 	namespace DXVideoPlayer { class Sample3DSceneRenderer; }
@@ -12,6 +12,11 @@ namespace prb {
 	namespace Input {
 
 		extern int mWheel;
+
+		extern const int MOUSE_NORMAL;
+		extern const int MOUSE_LOCKED;
+		extern const int MOUSE_HIDDEN;
+		extern int mouseStatus;
 
 		void init(HWND window);
 
@@ -44,6 +49,17 @@ namespace prb {
 		bool rightClickDown();	//alias for input::getMouseDown(1)
 		bool middleClickDown(); //alias for input::getMouseDown(2)
 		bool clickDown();		//alias for input::getMouseDown(0)
+
+		void setMouseVisible(bool visible);
+		void showMouse();
+		void hideMouse();
+
+		void setMousePos(vec2 pos);
+
+		void setMouseStatus(int status);
+		int getMouseStatus();
+		void toggleMouseStatus();
+
 
 		vec2 getIAxis2();
 		vec3 getIAxis3();

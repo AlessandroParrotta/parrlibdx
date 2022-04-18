@@ -12,10 +12,10 @@
 #include FT_OUTLINE_H
 #include FT_STROKER_H
 
-#include <parrlib/math/vector2f.h>
-#include <parrlib/math/vector4f.h>
-#include <parrlib/math/utils2d/axisalignedboundingbox2d.h>
-#include <parrlib/math/stringutils.h>
+#include <parrlibcore/vector2f.h>
+#include <parrlibcore/vector4f.h>
+#include <parrlibcore/utils2d/axisalignedboundingbox2d.h>
+#include <parrlibcore/stringutils.h>
 
 #include "FlowTexture.h"
 #include "vertexbuffer.h"

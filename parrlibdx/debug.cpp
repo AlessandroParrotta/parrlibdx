@@ -7,7 +7,7 @@
 #include <codecvt>
 #include <string>
 
-#include <parrlib/math/otherutil.h>
+#include <parrlibcore/otherutil.h>
 
 #include "Input.h"
 

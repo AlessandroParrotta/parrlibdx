@@ -4,10 +4,10 @@
 
 #include <DirectXMath.h>
 
-#include <parrlib/math/vector2f.h>
-#include <parrlib/math/vector4f.h>
-#include <parrlib/math/matrix3f.h>
-#include <parrlib/math/matrix4f.h>
+#include <parrlibcore/vector2f.h>
+#include <parrlibcore/vector4f.h>
+#include <parrlibcore/matrix3f.h>
+#include <parrlibcore/matrix4f.h>
 
 #include "shader.h"
 #include "constantbuffer.h"
