@@ -9,7 +9,7 @@
 #include "Input.h"
 #include "debug.h"
 #include "shader.h"
-#include "dxutil.h"
+#include "util.h"
 
 namespace prb {
     namespace DXContext {
@@ -121,6 +121,7 @@ namespace prb {
             UINT sampleMask = 0xffffffff;
             devcon->OMSetBlendState(g_pBlendStateNoBlend, NULL, sampleMask);
 
+            //deb::out("calling update\n");
             funcs[FUPDATE]();
             funcs[FDRAW]();
 
@@ -128,9 +129,9 @@ namespace prb {
 
             ThrowIfFailed(swapchain->Present(vSync, 0));
 
-            if (dxutil::mStack.size() > 1) {
+            if (util::mStack.size() > 1) {
                 deb::ss << "warning: degenerate matrix stack\n";
-                dxutil::mStack.clear(); dxutil::mStack.push_back(1.f);
+                util::mStack.clear(); util::mStack.push_back(1.f);
             }
 
             Input::mWheel = 0;
@@ -461,6 +462,8 @@ namespace prb {
                 deb::pr("monitor:\n");
                 deb::pr(info->rcMonitor.left, ", ", info->rcMonitor.right, ", ", info->rcMonitor.top, ", ", info->rcMonitor.bottom, "\n");
                 delete info;
+
+                return TRUE;
             }, 0);
 
             ShowWindow(windowHwnd, maximized ? SW_MAXIMIZE : SW_NORMAL);
@@ -472,7 +475,9 @@ namespace prb {
 
             InitD3D(windowHwnd);
 
-            dxutil::init();
+            //deb::out("inited D3D\n");
+
+            util::init();
 
             Input::init(windowHwnd);
             deb::debInit();
@@ -491,6 +496,7 @@ namespace prb {
 
             initialized = true;
 
+            //deb::out("calling init\n");
             funcs[FINIT]();
 
             int timesRendered = 0;

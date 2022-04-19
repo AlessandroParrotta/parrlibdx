@@ -76,57 +76,71 @@ namespace prb {
 		glyphs[gl].txmin = at.curMin;
 		glyphs[gl].txmax = at.curMin + glyphSize;
 
+		//deb::out("calculated glyph, tex size: ", at.tex.getSize(), "\n");
+
 		if ((wchar_t)gl != L' ') {
 			unsigned char* bitmap = ftbitmap.buffer;
 
-			unsigned char* img = new unsigned char[glyphSize.x * glyphSize.y * 4];
+			unsigned char* img = new unsigned char[glyphSize.x * glyphSize.y * 4ULL];
+			//deb::out("img ranges: { 0 -> ", (glyphSize.x * glyphSize.y * 4ULL), " }\n");
 
 			for (int y = 0; y < glyphSize.y; y++) {
 				for (int x = 0; x < glyphSize.x; x++) {
 					int idx = y * glyphSize.x + x;
+					if (idx * 4 + 3 >= (glyphSize.x * glyphSize.y * 4ULL)) deb::out("idx*4+3 >= ranges: ", (idx * 4 + 3), "\n");
 
-					img[idx * 4] = bitmap[idx];
+					img[idx * 4 + 0] = bitmap[idx];
 					img[idx * 4 + 1] = bitmap[idx];
 					img[idx * 4 + 2] = bitmap[idx];
 					img[idx * 4 + 3] = bitmap[idx];
-					//deb::outStr(idx * 4, " ", idx * 4 + 3, "\n");
+					//deb::out(idx * 4, " ", idx * 4 + 3, "\n");
 				}
 			}
 
 			if (at.tex.getSize().x < at.curMin.x + glyphSize.x ||
 				at.tex.getSize().y < at.curMin.y + glyphSize.y) {
 
-				deb::outStr("resize ", at.tex.getSize(), " -> ", (at.curMin + glyphSize + 2.f).maxed(at.tex.getSize()), "\n");
+				//deb::out("at tex size too small: resize ", at.tex.getSize(), " -> ", (at.curMin + glyphSize + 2.f).maxed(at.tex.getSize()), "\n");
 
 				at.tex.resize((at.curMin + glyphSize + 2.f).maxed(at.tex.getSize()));
 			}
 
-			deb::outStr("at.curmin glyphsize ", at.curMin, " ", glyphSize, " [->", at.curMin + glyphSize, "] [", at.tex.getSize(), "]\n");
+			//deb::out("at.curmin glyphsize ", at.curMin, " ", glyphSize, " [->", at.curMin + glyphSize, "] [", at.tex.getSize(), "]\n");
 
 			at.tex.fillRegion(img, at.curMin, glyphSize);
 			at.curMin += vec2{ glyphSize.x, 0.f } + vec2{ 2.f, 0.f };
 
-			//deb::outStr("loaded glyph\n");
+			//deb::out("called fillRegion\n");
 
-			//deb::outStr("img size: ", glyphSize.x * glyphSize.y * 4, "\n");
+			//deb::out("loaded glyph\n");
+
+			//deb::out("img size: ", glyphSize.x * glyphSize.y * 4, "\n");
 
 			delete[] img;
 
-			//deb::outStr("deleted img\n");
+			//deb::out("deleted img\n");
+
+			//deb::out("deleted img\n");
 		}
+
+		return glyphs[gl];
 	}
 
 	void TextRenderer::preloadGlyphs(std::wstring const& str) {
 		Atlas& at = getBackAtlas();
 		for (int i = 0; i < str.length(); i++) {
-			//deb::outStr(str[i], "\n");
+			//deb::out(str[i], "\n");
 			if (glyphs.find(str[i]) == glyphs.end()) { 
 				glyph gp;
-				//deb::outStr("points size: ", gp.points.size(), "\n");
+				//deb::out("points size: ", gp.points.size(), "\n");
+				//deb::out("preloading glyph: ", str[i], "\n");
 				gp = loadGlyph(str[i]);
+				//deb::out("preloaded glyph: ", str[i], "\n");
 			}
-			//deb::outStr("ldoeaddo\n");
+			//deb::out("ldoeaddo\n");
 		}
+
+		//deb::out("done preloading\n");
 	}
 
 	aabb2 TextRenderer::getTextBoundingBox(vec2 const& pos, vec2 screenSize) {

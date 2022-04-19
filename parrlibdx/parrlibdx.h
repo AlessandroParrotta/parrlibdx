@@ -19,7 +19,7 @@
 #include "Input.h"
 #include "context.h"
 #include "debug.h"
-#include "dxutil.h"
+#include "util.h"
 #include "shader.h"
 #include "TextRenderer.h"
 #include "Texture.h"

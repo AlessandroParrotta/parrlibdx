@@ -7,7 +7,7 @@
 #include "shader.h"
 
 #include "debug.h"
-#include "dxutil.h"
+#include "util.h"
 
 #include "context.h"
 
@@ -187,7 +187,7 @@ namespace prb {
 
     void FrameBuffer::drawImmediate(mat3 mat) {
         bindTex();
-        dxutil::drawTexture(mat);
+        util::drawTexture(mat);
     }
 
     void FrameBuffer::dispose() {

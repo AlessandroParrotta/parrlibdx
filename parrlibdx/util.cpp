@@ -1,4 +1,4 @@
-#include "dxutil.h"
+#include "util.h"
 
 #include <parrlibcore/utils2d/utils2d.h>
 
@@ -10,7 +10,7 @@
 #include "globals.h"
 
 namespace prb {
-	namespace DXUtil {
+	namespace Util {
 		bool useDefShader = true;
 
 		vbuf defVb;
@@ -643,7 +643,7 @@ namespace prb {
 		// draw triangles, expected layout for every vertex is:
 		// { posX, posY, colorR, colorG, colorB, colorA }
 		// vertices should be directly one after the other
-		// note that dxutil::color does not affect this function
+		// note that util::color does not affect this function
 		void drawTris(std::vector<float> const& verts) {
 			if (verts.size() / (2 + 4) < 3) return;
 
@@ -655,7 +655,7 @@ namespace prb {
 		}
 
 		// draw triangles using vec2 vertices
-		// use dxutil::color to set the color of all triangles at once
+		// use util::color to set the color of all triangles at once
 		void drawTris(std::vector<vec2> const& verts) { drawState.batching = false; drawTris(batchTris(verts));						drawState.batching = true; }
 		void drawShapeConvex(std::vector<vec2> const& verts) { drawState.batching = false; drawTris(batchShapeConvex(verts));				drawState.batching = true; }
 		void drawShape(std::vector<vec2> const& verts) { drawState.batching = false; drawTris(batchShape(verts));					drawState.batching = true; }

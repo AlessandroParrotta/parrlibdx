@@ -38,7 +38,7 @@ public:
 		int atlas = 0;			// which atlas this glyph is on
 		bool loaded = true;
 
-		//std::vector<vec2> points; //all points that define the outline of this glyph
+		std::vector<vec2> points; //all points that define the outline of this glyph
 	};
 
 	struct Atlas {

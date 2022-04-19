@@ -127,9 +127,9 @@ namespace prb {
 		void mbi();
 
 
-		void outStr(std::wstring const& str);
-		template<typename... Args> void outStr(Args... args) { std::wstring wstr = stru::composew(args...);	outStr(wstr); }
-		void outStr();
+		void out(std::wstring const& str);
+		template<typename... Args> void out(Args... args) { std::wstring wstr = stru::composew(args...);	out(wstr); }
+		void out();
 	}
 
 	namespace deb = debug;

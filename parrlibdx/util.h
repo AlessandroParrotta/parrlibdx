@@ -24,7 +24,7 @@ inline void operator+=(std::vector<float>& a, std::vector<float> const& b) {
 
 namespace prb {
 
-	namespace DXUtil {
+	namespace Util {
 
 		extern bool useDefShader;
 		void setDXMat3x3(DirectX::XMFLOAT3X3& mat, mat3 const& m);
@@ -151,5 +151,5 @@ namespace prb {
 		void drawTexture(Texture const& t, const mat3 mat = 1.f);
 	}
 
-	namespace dxutil = DXUtil;
+	namespace util = Util;
 }

@@ -5,7 +5,7 @@
 #include "common.h"
 
 #include "debug.h"
-#include "dxutil.h"
+#include "util.h"
 
 namespace prb {
 
@@ -182,7 +182,7 @@ namespace prb {
     }
 
     void Texture::drawImmediate(std::vector<float> const& verts) {
-        dxutil::drawTexture(*this, verts);
+        util::drawTexture(*this, verts);
     }
 
     void Texture::drawImmediate(vec2 pos, vec2 size) {

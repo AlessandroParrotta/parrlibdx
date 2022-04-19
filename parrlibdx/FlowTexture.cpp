@@ -3,7 +3,7 @@
 #include <SOIL/SOIL.h>
 
 #include "debug.h"
-#include "dxutil.h"
+#include "util.h"
 
 namespace prb {
 
@@ -67,13 +67,56 @@ namespace prb {
 
 	//size must be equal to the size of subData
 	void FlowTexture::fillRegion(unsigned char* subData, vec2 start, vec2 size) {
-		deb::outStr("fillRegion\n");
+		//deb::out("fillregion ", start, " -> ", start + size, " (", size, ")\n");
+
+		//vec2 end = start + size;
+
+		//if (start.x < 0.f) start.x = 0.f;
+		//if (start.x > getSize().x) start.x = getSize().x;
+
+		//if (start.y < 0.f) start.y = 0.f;
+		//if (start.y > getSize().y) start.y = getSize().x;
+
+		//if (end.x < 0.f) end.x = 0.f;
+		//if (end.x > getSize().x) end.x = getSize().y;
+
+		//if (end.y < 0.f) end.y = 0.f;
+		//if (end.y > getSize().y) end.y = getSize().y;
+
+		////deb::out("size: ", getSize(), ", region size: ", size, "\n");
+		////deb::out("start: ", start, ", end: ", end, "\n");
+
+		//for (int y = start.y; y < end.y; y++) {
+		//	//deb::out("copying row ", y, ", ", start.x, " -> ", end.x, " (0 -> ", size.x, ", ", start.x, " -> ", end.x, ")\n");
+		//	for (int x = start.x; x < end.x; x++) {
+		//		int dstidx = ((int)y * (int)getSize().x + (int)x)*4;
+		//		int srcidx = (((int)y-(int)start.y) * (int)size.x + ((int)x-(int)start.x))*4;
+
+		//		//if (dstidx > getSize().x * getSize().y * 4) deb::out("dstidx outside bounds: ", dstidx, "\n");
+		//		//if (dstidx < 0) deb::out("dstidx outside bounds: ", dstidx, "\n");
+		//		
+		//		//if (srcidx > size.x * size.y * 4) deb::out("srcidx outside bounds: ", dstidx, "\n");
+		//		//if (srcidx < 0) deb::out("srcidx outside bounds: ", dstidx, "\n");
+
+		//		//deb::out("copying ", srcidx + 0, ", ", srcidx + 1, ", ", srcidx + 2, ", ", srcidx + 3, "\n");
+		//		//deb::out("into ", dstidx + 0, ", ", dstidx + 1, ", ", dstidx + 2, ", ", dstidx + 3, "\n");
+		//		//deb::out("limit: ", getSize().x * getSize().y * 4, ", ", size.x * size.y * 4, "\n");
+		//		
+		//		data[dstidx + 0] = subData[srcidx + 0];
+		//		data[dstidx + 1] = subData[srcidx + 1];
+		//		data[dstidx + 2] = subData[srcidx + 2];
+		//		data[dstidx + 3] = subData[srcidx + 3];
+		//	}
+		//}
+
+		
+		//deb::out("fillRegion\n");
 		start = start.minned(getSize()).maxed(0.f);
 		vec2 end = (start + size).minned(getSize()).maxed(0.f);
 		vec2 oldSize = size;
 		size = (end - start).minned(oldSize);
 
-		deb::outStr(start, " -> ", end, "\n");
+		//deb::out(start, " -> ", end, "\n");
 
 		int width = size.x;
 		int height = size.y;
@@ -82,25 +125,28 @@ namespace prb {
 			int srcIdx = (y - (int)start.y) * width + 0;
 			int dstIdx = y * this->width + (int)start.x;
 			memcpy(&(data[dstIdx * 4]), &(subData[srcIdx * 4]), (width * 4));
-			deb::outStr("memcpy ", srcIdx * 4, " -> ", srcIdx * 4 + width*4, " (", width*height*4, ") ", dstIdx * 4, " -> ", dstIdx * 4 +width*4," (", this->width*this->height*4, ") (", start.xf(y), " -> ", (start+size).xf(y), ") ", width * 4, " (", getSize(), ")\n");
+			//deb::out("memcpy ", srcIdx * 4, " -> ", srcIdx * 4 + width*4, " (", width*height*4, ") ", dstIdx * 4, " -> ", dstIdx * 4 +width*4," (", this->width*this->height*4, ") (", start.xf(y), " -> ", (start+size).xf(y), ") ", width * 4, " (", getSize(), ")\n");
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		ThrowIfFailed(devcon->Map(texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+		//deb::out("mapped\n");
 
 		unsigned char* tdata = data;
 		BYTE* mappedData = reinterpret_cast<BYTE*>(mappedResource.pData);
 		BYTE* startx = mappedData;
-		deb::outStr("rowpitch width ", mappedResource.RowPitch, " ", this->width * 4, "\n");
+		//deb::out("rowpitch width ", mappedResource.RowPitch, " ", this->width * 4, "\n");
 		for (UINT i = 0; i < this->height; i++)
 		{
 			memcpy(mappedData, tdata, this->width * 4);
 			mappedData += mappedResource.RowPitch;
 			tdata += this->width * 4;
 		}
-		deb::outStr(tdata - this->width*4, "\n");
+		deb::out(tdata - this->width*4, "\n");
 
 		devcon->Unmap(texture, 0);
+
+		//deb::out("unmapped\n");
 	}
 
 	std::vector<unsigned char> FlowTexture::getData() {
@@ -111,8 +157,8 @@ namespace prb {
 
 	void FlowTexture::resize(vec2 newSize) {
 		FlowTexture t(newSize);
-		deb::outStr("resize ", getSize(), " -> ", newSize, "\n");
-		t.fillRegion(data, 0, getSize());
+		deb::out("resize ", getSize(), " -> ", newSize, "\n");
+		t.fillRegion(data, 0.f, getSize());
 		dispose();
 		*this = t;
 	}

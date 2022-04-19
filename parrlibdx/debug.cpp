@@ -83,7 +83,10 @@ namespace prb {
 		}
 
 		void debInit() {
+			//deb::out("initializing deb textrenderer\n");
 			debtxr = TextRenderer(getExeFolder() + "segoeui.ttf", 26);
+			//deb::out("initialized deb textrenderer\n");
+			//deb::out("debtxr tex size ", debtxr.getBackAtlas().tex.getSize(), "\n");
 		}
 
 		void dispose() {
@@ -232,7 +235,7 @@ namespace prb {
 		void mbi() { mbi(tss.str()); tss.clear(); tss.str(L""); }
 
 
-		void outStr(std::wstring const& str) { OutputDebugString(str.c_str()); }
-		void outStr() { std::wstring str = tss.str(); outStr(str); tss.clear(); tss.str(L""); }
+		void out(std::wstring const& str) { std::wcout << str; OutputDebugString(str.c_str()); }
+		void out() { std::wstring str = tss.str(); out(str); tss.clear(); tss.str(L""); }
 	}
 }
