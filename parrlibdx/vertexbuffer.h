@@ -7,6 +7,7 @@
 #include <d3dx10.h>
 
 namespace prb {
+
 	class VertexBuffer {
 	public:
 		ID3D11Buffer* vptr = NULL;
@@ -15,6 +16,9 @@ namespace prb {
 		UINT vCount = 0; //vertex number
 
 		void init(D3D11_BUFFER_DESC* desc, D3D11_SUBRESOURCE_DATA* subRes);
+		void init(const void* data, size_t byteSize, UINT stride, UINT offset);
+		void init(std::vector<float> const& data, UINT stride, UINT offset);
+		void init(size_t byteSize, UINT stride, UINT offset);
 
 		VertexBuffer();
 		VertexBuffer(D3D11_BUFFER_DESC& desc, D3D11_SUBRESOURCE_DATA& subRes);
@@ -36,4 +40,5 @@ namespace prb {
 #ifndef PARRLIBDX_NAMESPACE_SHORTEN
 	typedef VertexBuffer vbuf;
 #endif
+
 }

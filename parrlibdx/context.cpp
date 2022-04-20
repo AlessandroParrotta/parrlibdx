@@ -4,6 +4,7 @@
 
 #include <parrlibcore/timer.h>
 #include <parrlibcore/otherutil.h>
+#include <parrlibcore/tick.h>
 
 #include "common.h"
 #include "Input.h"
@@ -67,6 +68,9 @@ namespace prb {
         bool vSync = false;
         bool focused = true;
 
+        float lerpDeltaTime = 0.f;
+        float lerpFps = 0.f;
+
         int framerateCap = 0;
         void setFramerateCap(int framerateCap) { prc::framerateCap = framerateCap; }
         int getFramerateCap() { return framerateCap; }
@@ -113,7 +117,14 @@ namespace prb {
 
             curtime += deltaTime;
 
-            deb::rtss << "FPS: " << (1. / deltaTime) << "\n";
+            tick::time = curtime;
+            tick::deltaTime = deltaTime;
+
+            lerpFps += ((1. / deltaTime) - lerpFps) * 6.f * deltaTime;
+            lerpDeltaTime += (deltaTime - lerpDeltaTime) * 6.f * deltaTime;
+
+            deb::prt("FPS: ", (int)lerpFps, " (", stru::ts::fromSec(lerpDeltaTime, 2), ")\n");
+            //deb:prt("FPS: ", (1. / deltaTime), "\n");
 
             devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(clearColor.x, clearColor.y, clearColor.z, clearColor.w));
 
@@ -398,7 +409,7 @@ namespace prb {
                 if (!EnumDisplaySettings((LPWSTR)DisplayDevice.DeviceName, ENUM_REGISTRY_SETTINGS, &defaultMode)) deb::ss << "could not display settings\n";
                 else {
                     if (defaultMode.dmPelsWidth > 0 && defaultMode.dmPelsHeight > 0) {
-                        deb::ss << "display device " << DispNum << ": " << defaultMode.dmPelsWidth << "x" << defaultMode.dmPelsHeight << "@" << defaultMode.dmDisplayFrequency << "Hz (" << defaultMode.dmDeviceName << ")" << "\n";
+                        deb::pr("display device ", DispNum, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
                         vmodes.push_back(DeviceMode(vec2(defaultMode.dmPelsWidth, defaultMode.dmPelsHeight), defaultMode.dmDisplayFrequency, defaultMode));
                     }
                 }

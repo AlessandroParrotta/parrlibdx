@@ -15,6 +15,8 @@
 #include <parrlibcore/stringutils.h>
 #include <parrlibcore/utils2d/utils2d.h>
 
+#include <parrlibcore/tick.h>
+
 #include "common.h"
 #include "Input.h"
 #include "context.h"

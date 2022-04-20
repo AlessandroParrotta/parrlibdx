@@ -8,6 +8,7 @@
 #include <d3dx10.h>
 
 #include <parrlibcore/vector2f.h>
+#include <parrlibcore/vector4f.h>
 
 namespace prb {
 
@@ -37,10 +38,13 @@ namespace prb {
 		Texture(vec2 size, int linesize, DXGI_FORMAT format, D3D_SRV_DIMENSION viewDimension);
 		Texture(vec2 size, int linesize);
 
+		bool null();
+
 		vec2 getSize();
 
 		void setData(unsigned char* data, vec2 size, int linesize);
 		void setData(unsigned char* data, vec2 size);
+		void setData(vec4 data);
 
 		//extremely inefficient, DO NOT USE unless it's for testing
 		//this assumes there is already a shader bound to the device

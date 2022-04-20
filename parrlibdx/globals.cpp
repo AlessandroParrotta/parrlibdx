@@ -4,7 +4,7 @@ namespace prb {
 	namespace globals {
 		std::unordered_map<std::string, TextRenderer> txrs;
 		bool findTxr(std::string const& name) { return txrs.find(name) != txrs.end(); }
-		void setTxr(std::string const& name, std::string const& fontName, int const& fontSize) { txrs[name] = { fontName, fontSize }; }
+		void setTxr(std::string const& name, std::string const& fontName, int const& fontSize) { txrs[name] = { { fontName }, fontSize }; }
 		TextRenderer& getTxr(std::string const& name) {
 			if (txrs.find(name) == txrs.end()) setTxr(name, "assets/fonts/segoeui.ttf", 24);
 			return txrs[name];
@@ -16,7 +16,7 @@ namespace prb {
 			shaders[name] = sh;
 		}
 		Shader& getShader(std::string const& name) {
-			if (!findShader(name)) shaders[name] = { (name + "v.hlsl"), (name + "p.hlsl"), true };
+			if (!findShader(name)) shaders[name] = { (name + "v.hlsl"), (name + "p.hlsl") };
 			return shaders[name];
 		}
 

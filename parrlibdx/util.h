@@ -10,6 +10,7 @@
 #include <parrlibcore/matrix4f.h>
 
 #include "shader.h"
+#include "texture.h"
 #include "constantbuffer.h"
 
 #ifndef NO_IMPL_CONCAT_STD_VECTOR_FLOAT

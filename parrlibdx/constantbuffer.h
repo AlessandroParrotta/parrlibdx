@@ -6,10 +6,9 @@
 
 
 #include "common.h"
-#include "debug.h"
+//#include "../parrlib/debug.h"
 
 namespace prb {
-
 	class ConstantBuffer {
 	public:
 		ID3D11Buffer* cptr = NULL;
@@ -21,6 +20,7 @@ namespace prb {
 		ConstantBuffer(const void* data, UINT byteSize);
 		template<class T> ConstantBuffer(T const& data) : ConstantBuffer(&data, sizeof(data)) {}
 
+		void setData(const void* data, UINT offset, UINT byteSize);
 		void setData(const void* data, UINT byteSize);
 
 		template<class T> void setData(T const& data) {
@@ -32,8 +32,11 @@ namespace prb {
 			devcon->Unmap(cptr, NULL);
 		}
 
-		void use();
+		void use() const;
+
+		void dispose();
 	};
 
 	typedef ConstantBuffer cbuf;
+
 }

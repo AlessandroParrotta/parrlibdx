@@ -29,20 +29,9 @@ namespace prb {
 
 		TextRenderer debtxr;
 		std::mutex dmtx;
-		//dss deb;
-		//dss rtdeb;
-		//std::wstringstream ss;
-		//std::wstringstream rtss;
 		uss ss;
 		std::wstringstream rtss;
 		std::vector<std::wstring> strs;
-
-		//void printdeb() {
-		//	debs.push_back(deb.str());
-		//
-		//	deb.clear();
-		//	deb.str(L"");
-		//}
 
 		bool windowEnabled = true;
 
@@ -84,7 +73,10 @@ namespace prb {
 
 		void debInit() {
 			//deb::out("initializing deb textrenderer\n");
-			debtxr = TextRenderer(getExeFolder() + "segoeui.ttf", 26);
+			//debtxr = TextRenderer({ getExeFolder() + "segoeui.ttf" }, 26);
+			debtxr = { { (getExeFolder() + "segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
+			debtxr.color(vc4::white);
+																   //debtxr.setOutline(2);
 			//deb::out("initialized deb textrenderer\n");
 			//deb::out("debtxr tex size ", debtxr.getBackAtlas().tex.getSize(), "\n");
 		}
@@ -112,6 +104,11 @@ namespace prb {
 
 			std::wstring bigstr = wss.str();
 			bigstr = replaceCharWithString(bigstr, L'\t', L"    ");
+
+			//std::vector<std::wstring> strs = stru::toLines(wss.str());
+			
+			//wss.clear();
+			//wss.str(L"");
 
 			std::vector<std::wstring> strs;
 
@@ -150,8 +147,33 @@ namespace prb {
 
 			std::vector<std::wstring> rtdebs = getDebs(rtss);
 			if (drawStrs) {
+				//for (int i = 0; i < rtdebs.size(); i++) {
+				//	debtxr.drawText(rtdebs[i], { -.99f, .95f - strSpacing * i }, screenSize);
+				//}
+
+				float aspectCorrect = cst::resaspect();
+				float scaleFactor = 1.f;
+				float cheight = (debtxr.getFontSize() + debtxr.getOutline()) / cst::res().y * (cst::res().aspectmaxv().y * 2.f);
+
+				//deb::out(aspectCorrect, " ", cheight, "\n");
+
 				for (int i = 0; i < rtdebs.size(); i++) {
-					debtxr.drawText(rtdebs[i], { -.99f, .95f - strSpacing * i }, screenSize);
+					//float y = 1.0f - cheight * i;
+					//vec2 screen = cst::res().aspectmaxv();
+					//vec2 pos = screen.nx() - vec2y(cheight * i);
+					vec2 pos = vec2(-.99f, .99f) - vec2y(cheight * i);
+
+					//deb::out(screen, " ", pos, "\n");
+
+					//if (pos.y >= -screen.y && pos.y <= screen.y) {
+					if (pos.y >= -1.f && pos.y <= 1.f) {
+						//txr.drawWStringpx(rtStrs[i], vec2(1.f), pmat3::translate(vec2(-prc::wres().aspectmax(), y)));
+						//txr.drawWStringpx(rtStrs[i], vec2(1.f).ny(), pmat3::translate(vec2(-std::fmax(prc::wres().aspectx(),1.f),y)));
+						debtxr.drawWStringpx(rtdebs[i], vec2(1.f).ny(), pmat3::translate(pos));
+						//std::cout << "drawStrRT\n";
+					}
+
+					//rtdebs[i] = L"";
 				}
 			}
 
@@ -175,7 +197,7 @@ namespace prb {
 				int start = (std::max)((int)strs.size() - debDrawLimit + startOffset, 0);
 				int end = (std::min)(start + debDrawLimit, (int)strs.size());
 				for (int i = start; i < end; i++) {
-					debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) }, screenSize);
+					debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) });
 				}
 			}
 		}

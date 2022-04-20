@@ -104,6 +104,9 @@
     <ClInclude Include="camera3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stringutils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\defaultp.hlsl" />

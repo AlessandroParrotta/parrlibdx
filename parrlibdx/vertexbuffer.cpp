@@ -55,6 +55,8 @@ namespace prb {
 
 		//ThrowIfFailed(dev->CreateBuffer(&desc, NULL, &vptr));
 		init(&desc, &subRes);
+
+		//deb::debss << "init vb data " << data.size() << " (" << (data.size()*sizeof(float)) << ") " << stride << " " << offset; deb::msbinfo();
 	}
 
 	VertexBuffer::VertexBuffer(size_t byteSize, UINT stride, UINT offset) {
@@ -73,6 +75,9 @@ namespace prb {
 		vCount = dataCapacity / stride;
 
 		init(&desc, NULL);
+
+		//deb::debss << "init vb " << byteSize << " " << stride << " " << offset; deb::msbinfo();
+ 		//deb::msbinfo("init vertex buffer");
 	}
 
 	void VertexBuffer::resize(size_t size) {
@@ -82,7 +87,7 @@ namespace prb {
 		*this = vb;
 	}
 
-	void VertexBuffer::setData(std::vector<float> const& data) {
+	void VertexBuffer::setData(std::vector<float> const& data) { /*, std::vector<unsigned int> const& dataTypes*/
 		if (data.size() <= 0) return;
 
 		if (data.size() * sizeof(float) > dataCapacity) resize(data.size() * sizeof(float));
@@ -90,16 +95,21 @@ namespace prb {
 		else vCount = data.size() / (stride / sizeof(float));
 
 		D3D11_MAPPED_SUBRESOURCE ms;
-		devcon->Map(vptr, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+		ThrowIfFailed(devcon->Map(vptr, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms));
 
-		memcpy(ms.pData, &data[0], sizeof(float) * data.size());
+			memcpy(ms.pData, &data[0], sizeof(float) * data.size());
+
+			//deb::debss << "vb set data memcpy " << ms.pData << " " << (&data[0]) << " " <<(sizeof(float) * data.size()); deb::msbinfo();
 
 		devcon->Unmap(vptr, NULL);
+
+		//deb::debss << "vb set data " << data.size(); deb::msbinfo();
 	}
 
 	void VertexBuffer::use() {
 		devcon->IASetVertexBuffers(0, 1, &vptr, &stride, &offset);
 		devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//deb::debss << "vb use "; deb::msbinfo();
 	}
 
 	void VertexBuffer::release() {
@@ -109,9 +119,16 @@ namespace prb {
 	void VertexBuffer::draw() {
 		use();
 		devcon->Draw(vCount, 0);
+		//deb::debss << "vertexbuffer draw " << vCount << " " << vptr << " " << dataCapacity << " " << stride << " " << offset; deb::msbinfo();
 	}
 
 	void VertexBuffer::dispose() {
 		vptr->Release();
+	}
+
+	size_t calcStride(std::vector<unsigned int> const& dataTypes) {
+		size_t stride = 0; for (int i = 0; i < dataTypes.size(); i++) stride += dataTypes[i];
+		stride *= sizeof(float);
+		return stride;
 	}
 }

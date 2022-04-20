@@ -145,6 +145,8 @@ namespace prb {
     Texture::Texture(vec2 size, int linesize) : Texture(size, linesize, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_SRV_DIMENSION_TEXTURE2D) {}
 
 
+    bool Texture::null() { return !texture || !resView || !sampler; }
+
     vec2 Texture::getSize() { return { (float)width, (float)height }; }
 
     void Texture::setData(unsigned char* data, vec2 size, int linesize) {
@@ -181,6 +183,25 @@ namespace prb {
         devcon->Unmap(texture, 0);
     }
 
+    void Texture::setData(vec4 data) {
+        if (width <= 0 || height <= 0) return;
+
+        //data.clamp(0.f, 1.f);
+        
+        unsigned char* ndata = new unsigned char[this->width * this->height * 4];
+
+        for(int i=0; i< this->width * this->height * 4; i+=4){
+            ndata[i + 0] = (unsigned char)(data.x*255.f);
+            ndata[i + 1] = (unsigned char)(data.y*255.f);
+            ndata[i + 2] = (unsigned char)(data.z*255.f);
+            ndata[i + 3] = (unsigned char)(data.w*255.f);
+        }
+
+        setData(ndata, vec2(width, height));
+
+        delete[] ndata;
+    }
+
     void Texture::drawImmediate(std::vector<float> const& verts) {
         util::drawTexture(*this, verts);
     }
@@ -206,9 +227,9 @@ namespace prb {
     }
 
     void Texture::dispose() {
-        resView->Release();
-        texture->Release();
-        sampler->Release();
+        if(resView) resView->Release();
+        if(texture) texture->Release();
+        if(sampler) sampler->Release();
     }
 }
 

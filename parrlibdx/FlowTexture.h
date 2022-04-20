@@ -26,6 +26,7 @@ namespace prb {
 
 		void setData(unsigned char* data, vec2 size, int linesize);
 		void setData(unsigned char* data, vec2 size);
+		void setData(vec4 data);
 
 		void dispose();
 	};

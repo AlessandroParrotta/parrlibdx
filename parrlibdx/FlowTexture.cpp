@@ -142,7 +142,7 @@ namespace prb {
 			mappedData += mappedResource.RowPitch;
 			tdata += this->width * 4;
 		}
-		deb::out(tdata - this->width*4, "\n");
+		//deb::out(tdata - this->width*4, "\n");
 
 		devcon->Unmap(texture, 0);
 
@@ -157,7 +157,7 @@ namespace prb {
 
 	void FlowTexture::resize(vec2 newSize) {
 		FlowTexture t(newSize);
-		deb::out("resize ", getSize(), " -> ", newSize, "\n");
+		//deb::out("resize ", getSize(), " -> ", newSize, "\n");
 		t.fillRegion(data, 0.f, getSize());
 		dispose();
 		*this = t;
@@ -182,6 +182,11 @@ namespace prb {
 		memcpy(cpData, data, size.x * size.y * 4);
 
 		this->data = cpData;
+	}
+
+	void FlowTexture::setData(vec4 data) {
+		if (width <= 0 || height <= 0) return;
+
 	}
 
 	void FlowTexture::dispose() {

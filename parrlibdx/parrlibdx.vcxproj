@@ -162,6 +162,7 @@
     <ClInclude Include="constantbuffer.h" />
     <ClInclude Include="context.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="stringutils.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="FlowTexture.h" />
     <ClInclude Include="framebuffer.h" />

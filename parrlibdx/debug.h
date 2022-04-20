@@ -105,7 +105,7 @@ namespace prb {
 		template<typename... Args> void pr(Args... args) { std::wstring wstr = stru::composew(args...);	ss << wstr; }
 		template<typename... Args> void prt(Args... args) { std::wstring wstr = stru::composew(args...);	rtss << wstr; }
 		
-		template<typename... Args> void prln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	rtss << wstr; }
+		template<typename... Args> void prln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	ss << wstr; }
 		template<typename... Args> void prtln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	rtss << wstr; }
 
 		std::wstring tows(const wchar_t* c);
