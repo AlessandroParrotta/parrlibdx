@@ -27,6 +27,7 @@ namespace prb {
 		VertexBuffer(size_t byteSize, UINT stride, UINT offset);
 
 		void resize(size_t size); //in bytes
+		void setData(std::vector<float> const& data, int count);
 		void setData(std::vector<float> const& data);
 
 		void use();

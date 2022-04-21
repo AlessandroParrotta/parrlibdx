@@ -172,9 +172,9 @@ void TextRenderer::loadGlyph(std::string const& font, unsigned long id) {
 					for (int x = 0; x < bitmap.width; x++) {
 						int idx = y * bitmap.width + x;
 
-						buf[idx * 4 + 0] = buffer[idx];
-						buf[idx * 4 + 1] = buffer[idx];
-						buf[idx * 4 + 2] = buffer[idx];
+						buf[idx * 4 + 0] = 255;
+						buf[idx * 4 + 1] = 255;
+						buf[idx * 4 + 2] = 255;
 						buf[idx * 4 + 3] = buffer[idx];
 					}
 				}
@@ -219,7 +219,7 @@ std::string TextRenderer::checkAndLoadGlyph(std::string const& font, wchar_t con
 }
 
 TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std::string const& font, vec2 const& off, mat3 const& transform) {
-	int fnum = str.length() * (3 * 2) * 4 * 2;
+	int fnum = (str.length() * (3 * 2) * 4 * 2) * 2;
 
 	if (data.size() < fnum) data.resize(fnum);
 	int dcount = 0;
@@ -345,7 +345,10 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 	//	);
 	//}
 
-	vao.setData(data);
+	vao.setData(data, dcount);
+
+	//vertBatch tres; tres.insert(tres.begin(), data.begin(), data.begin() + dcount);
+	//vao.setData(tres);
 
 	//util::texEnable();
 	//bool blenden = util::blendEnabled(); if(!blenden) util::blendEnable();
@@ -369,6 +372,8 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 	sh.release();
 	//if (!blenden) util::blendDisable();
 	//util::texDisable();
+
+	//vao.setData({ 0.f });
 
 	return { count, cur };
 }

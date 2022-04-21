@@ -132,6 +132,8 @@ namespace prb {
             UINT sampleMask = 0xffffffff;
             devcon->OMSetBlendState(g_pBlendStateNoBlend, NULL, sampleMask);
 
+            util::multMatrix(util::getAspectOrtho());
+
             //deb::out("calling update\n");
             funcs[FUPDATE]();
             funcs[FDRAW]();
@@ -144,6 +146,9 @@ namespace prb {
                 deb::ss << "warning: degenerate matrix stack\n";
                 util::mStack.clear(); util::mStack.push_back(1.f);
             }
+
+            util::mStack.clear();
+            util::mStack.push_back(1.f);
 
             Input::mWheel = 0;
 
@@ -246,6 +251,7 @@ namespace prb {
             // use the back buffer address to create the render target
             ThrowIfFailed(dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer));
             pBackBuffer->Release();
+            
 
             // set the render target as the back buffer
             devcon->OMSetRenderTargets(1, &backbuffer, NULL);
@@ -277,6 +283,32 @@ namespace prb {
             BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
             BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
             ThrowIfFailed(dev->CreateBlendState(&BlendState, &g_pBlendStateNoBlend));
+
+
+
+            ID3D11RasterizerState* state = nullptr;
+            devcon->RSGetState(&state);
+
+            D3D11_RASTERIZER_DESC rsdesc;
+            if (state) state->GetDesc(&rsdesc);
+            rsdesc.CullMode = D3D11_CULL_NONE;
+
+            rsdesc.AntialiasedLineEnable = false;
+            rsdesc.CullMode = D3D11_CULL_NONE;
+            rsdesc.DepthBias = 0;
+            rsdesc.DepthBiasClamp = 0.0f;
+            rsdesc.DepthClipEnable = true;
+            rsdesc.FillMode = D3D11_FILL_SOLID;
+            rsdesc.FrontCounterClockwise = true;
+            rsdesc.MultisampleEnable = false;
+            rsdesc.ScissorEnable = false;
+            rsdesc.SlopeScaledDepthBias = 0.0f;
+
+            ID3D11RasterizerState* nState = nullptr;
+            ThrowIfFailed(dev->CreateRasterizerState(&rsdesc, &nState));
+            devcon->RSSetState(nState);
+
+            if (state) state->Release();
         }
 
         void CleanD3D(void)
@@ -470,8 +502,8 @@ namespace prb {
                 LPMONITORINFO info = new MONITORINFO();
                 info->cbSize = sizeof(MONITORINFO);
                 GetMonitorInfo(monitor, info);
-                deb::pr("monitor:\n");
-                deb::pr(info->rcMonitor.left, ", ", info->rcMonitor.right, ", ", info->rcMonitor.top, ", ", info->rcMonitor.bottom, "\n");
+                //deb::pr("monitor:\n");
+                //deb::pr(info->rcMonitor.left, ", ", info->rcMonitor.right, ", ", info->rcMonitor.top, ", ", info->rcMonitor.bottom, "\n");
                 delete info;
 
                 return TRUE;

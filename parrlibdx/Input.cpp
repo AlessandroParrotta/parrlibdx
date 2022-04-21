@@ -2,6 +2,7 @@
 
 #include <parrlibcore/constants.h>
 
+#include "util.h"
 #include "debug.h"
 
 namespace prb {
@@ -99,7 +100,7 @@ namespace prb {
 		}
 
 		vec2 getMousePos() {
-			return mpos / getClientRect().size() * 2.f - 1.f;
+			return (util::getAspectOrtho().inverted() *  (mpos / getClientRect().size() * 2.f - 1.f)).ny();
 		}
 
 		vec2 getMouseDelta() {

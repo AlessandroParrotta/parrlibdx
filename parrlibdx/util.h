@@ -9,6 +9,9 @@
 #include <parrlibcore/matrix3f.h>
 #include <parrlibcore/matrix4f.h>
 
+#include <parrlibcore/otherutil.h>
+#include <parrlibcore/stringutils.h>
+
 #include "shader.h"
 #include "texture.h"
 #include "constantbuffer.h"
@@ -150,6 +153,17 @@ namespace prb {
 		void bindTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler);
 		void drawTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler, const mat3 mat = 1.f);
 		void drawTexture(Texture const& t, const mat3 mat = 1.f);
+	
+
+		extern outl::uniss text;
+		void drawText(std::string const& font, int const& fontSize, mat3 const& transform);
+		void drawText(int const& fontSize, mat3 const& transform);
+		void drawText(int const& fontSize, vec2 const& pos);
+		void drawText(mat3 const& transform);
+		void drawText(vec2 const& pos);
+
+		template<typename... Args> inline void drawText(int const& fontSize, mat3 const& transform, Args... args) { text << stru::composew(args...); drawText(getExeFolder() + "segoeui.ttf", fontSize, transform); }
+		template<typename... Args> inline void drawText(int const& fontSize, vec2 const& pos, Args... args) { text << stru::composew(args...); drawText(fontSize, pmat3::translate(pos)); }
 	}
 
 	namespace util = Util;

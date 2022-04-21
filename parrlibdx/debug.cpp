@@ -76,7 +76,7 @@ namespace prb {
 			//debtxr = TextRenderer({ getExeFolder() + "segoeui.ttf" }, 26);
 			debtxr = { { (getExeFolder() + "segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
 			debtxr.color(vc4::white);
-																   //debtxr.setOutline(2);
+			debtxr.setOutline(2);
 			//deb::out("initialized deb textrenderer\n");
 			//deb::out("debtxr tex size ", debtxr.getBackAtlas().tex.getSize(), "\n");
 		}
@@ -161,7 +161,7 @@ namespace prb {
 					//float y = 1.0f - cheight * i;
 					//vec2 screen = cst::res().aspectmaxv();
 					//vec2 pos = screen.nx() - vec2y(cheight * i);
-					vec2 pos = vec2(-.99f, .99f) - vec2y(cheight * i);
+					vec2 pos = vec2(-1.f, .99f) - vec2y(cheight * i);
 
 					//deb::out(screen, " ", pos, "\n");
 
@@ -194,12 +194,38 @@ namespace prb {
 			if (debs.size() > 0) strs.insert(strs.end(), debs.begin(), debs.end());
 			if (strs.size() > deblimit) strs.erase(strs.begin(), strs.end() - deblimit);
 			if (drawStrs) {
-				int start = (std::max)((int)strs.size() - debDrawLimit + startOffset, 0);
-				int end = (std::min)(start + debDrawLimit, (int)strs.size());
-				for (int i = start; i < end; i++) {
-					debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) });
+				//int start = (std::max)((int)strs.size() - debDrawLimit + startOffset, 0);
+				//int end = (std::min)(start + debDrawLimit, (int)strs.size());
+				//for (int i = start; i < end; i++) {
+				//	//deb::out(strDebStart, " ", strSpacing, " ", strDebStart - strSpacing * (i - start), "\n");
+				//	debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) });
+				//}
+
+				float aspectCorrect = cst::resaspect();
+				float scaleFactor = 1.f;
+				float cheight = (debtxr.getFontSize() + debtxr.getOutline()) / cst::res().y * (cst::res().aspectmaxv().y * 2.f);
+				
+				//float sliderVal = startOffset / 2.0f;
+				float sliderVal = 0.f;
+
+				if (cheight * strs.size() < 1.0f) {
+					sliderVal = 0.0f;
+				}
+
+				for (int i = strs.size() - 1; i >= 0; i--) {
+					float ypos = -0.99f + cheight * (strs.size() - 1 - i - startOffset) - sliderVal;
+
+					if (ypos < -1.0f - cheight) continue;
+					if (ypos >= 0.0f) break;
+
+
+					debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(-1.f, ypos)));
+					//std::cout << "drawStr\n";
 				}
 			}
+
+			//for (int i = 0; i < 10; i++)
+			//	for (int j = 0; j < 10; j++) debtxr.drawText(vec2{ -.99f, strDebStart - strSpacing * (i + j - 0) }, "Hello ", i, " Hi ", j, " tryna get a longer string to see bugs");
 		}
 
 		std::wstring tos(int i) { return std::to_wstring(i); }

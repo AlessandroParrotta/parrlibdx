@@ -87,17 +87,17 @@ namespace prb {
 		*this = vb;
 	}
 
-	void VertexBuffer::setData(std::vector<float> const& data) { /*, std::vector<unsigned int> const& dataTypes*/
-		if (data.size() <= 0) return;
+	void VertexBuffer::setData(std::vector<float> const& data, int count) { /*, std::vector<unsigned int> const& dataTypes*/
+		if (count <= 0) return;
 
-		if (data.size() * sizeof(float) > dataCapacity) resize(data.size() * sizeof(float));
-		else if (data.size() * sizeof(float) < dataCapacity / 4) resize(data.size() * sizeof(float));
-		else vCount = data.size() / (stride / sizeof(float));
+		if (count * sizeof(float) > dataCapacity) resize(count * sizeof(float));
+		else if (count * sizeof(float) < dataCapacity / 4) resize(count * sizeof(float));
+		else vCount = count / (stride / sizeof(float));
 
 		D3D11_MAPPED_SUBRESOURCE ms;
 		ThrowIfFailed(devcon->Map(vptr, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms));
 
-			memcpy(ms.pData, &data[0], sizeof(float) * data.size());
+			memcpy(ms.pData, &data[0], sizeof(float) * count);
 
 			//deb::debss << "vb set data memcpy " << ms.pData << " " << (&data[0]) << " " <<(sizeof(float) * data.size()); deb::msbinfo();
 
@@ -105,6 +105,7 @@ namespace prb {
 
 		//deb::debss << "vb set data " << data.size(); deb::msbinfo();
 	}
+	void VertexBuffer::setData(std::vector<float> const& data) { setData(data, data.size()); }
 
 	void VertexBuffer::use() {
 		devcon->IASetVertexBuffers(0, 1, &vptr, &stride, &offset);

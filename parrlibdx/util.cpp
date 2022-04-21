@@ -71,7 +71,7 @@ namespace prb {
 		mat3 getAspectOrthoY() { return pmat3::orthoAspectY(cst::res()); }
 		mat3 getMinAspectOrtho() { return pmat3::orthoMinAspect(cst::res()); }
 		mat3 getMaxAspectOrtho() { return pmat3::orthoMaxAspect(cst::res()); }
-		mat3 getAspectOrtho() { return pmat3::orthoMaxAspect(cst::res()); }
+		mat3 getAspectOrtho() { return pmat3::orthoMaxAspect(cst::res()).inverted(); }
 
 		mat3 getAspectOrthoXInv() { return pmat3::orthoAspectXInv(cst::res()); }
 		mat3 getAspectOrthoYInv() { return pmat3::orthoAspectYInv(cst::res()); }
@@ -724,5 +724,31 @@ namespace prb {
 			bindTexture(resView, sampler); drawTexture(mat);
 		}
 		void drawTexture(Texture const& t, const mat3 mat) { drawTexture(t.resView, t.sampler, mat); }
+		
+
+		std::unordered_map<int, TextRenderer> txrs;
+		outl::uniss text;
+		void drawText(std::string const& font, int const& fontSize, mat3 const& transform) {
+			if (text.str().length() == 0) return;
+			if (txrs.find(fontSize) == txrs.end()) { txrs[fontSize] = TextRenderer({ font }, fontSize);  txrs[fontSize].setOutline(2); txrs[fontSize].color(vc4::white); txrs[fontSize].outlineColor(vc4::black); }
+
+			std::vector<std::wstring> strs = stru::toLines(text.str());
+
+			if (strs.size() > 0) for (int i = 0; i < strs.size(); i++) txrs[fontSize].drawWStringpx(strs[i], transform * pmat3::translate(vec2(0.f, -(fontSize / cst::resy() * 2.f) * i)));
+			else txrs[fontSize].drawWStringpx(text.str(), font, 0.f, transform);
+
+			text.str(L"");
+			text.clear();
+		}
+		void drawText(int const& fontSize, mat3 const& transform) { drawText(getExeFolder() + "segoeui.ttf", fontSize, transform); }
+		void drawText(int const& fontSize, vec2 const& pos) { drawText(fontSize, pmat3::translate(pos)); }
+		void drawText(mat3 const& transform) { drawText(getExeFolder() + "segoeui.ttf", 15, transform); }
+		void drawText(vec2 const& pos) { drawText(pmat3::translate(pos)); }
+
+		aabb2 getTextBound(std::string const& font, int const& fontSize, mat3 const& transform) {
+			if (txrs.find(fontSize) == txrs.end()) txrs[fontSize] = TextRenderer({ font }, fontSize);
+			return txrs[fontSize].getAABBpx(transform);
+		}
+		aabb2 getTextBound(mat3 const& transform) { return getTextBound(getExeFolder() + "segoeui.ttf", 15, transform); }
 	}
 }
