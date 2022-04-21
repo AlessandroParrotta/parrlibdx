@@ -57,6 +57,21 @@
     <ClCompile Include="camera3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ui\imui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debugmenu\console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debugmenu\debugmenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spritebatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="context.h">
@@ -107,6 +122,21 @@
     <ClInclude Include="stringutils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ui\imui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debugmenu\console.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debugmenu\debugmenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spritebatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\defaultp.hlsl" />
@@ -115,5 +145,9 @@
     <FxCompile Include="shaders\texturev.hlsl" />
     <FxCompile Include="shaders\utilv.hlsl" />
     <FxCompile Include="shaders\utilp.hlsl" />
+    <FxCompile Include="shaders\spritebatchp.hlsl" />
+    <FxCompile Include="shaders\spritebatchv.hlsl" />
+    <FxCompile Include="shaders\textRenderp.hlsl" />
+    <FxCompile Include="shaders\textRenderv.hlsl" />
   </ItemGroup>
 </Project>

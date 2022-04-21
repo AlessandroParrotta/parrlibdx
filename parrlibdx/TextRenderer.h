@@ -10,9 +10,6 @@
 #include FT_OUTLINE_H
 #include FT_STROKER_H
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <parrlibcore/vector2f.h>
 #include <parrlibcore/vector4f.h>
 #include <parrlibcore/matrix3f.h>
@@ -81,7 +78,7 @@ namespace prb {
 		bool outlineEnabled = false;
 		unsigned int outlinepx = 0;
 
-		GLint minFilter = GL_LINEAR, magFilter = GL_LINEAR;
+		int minFilter = D3DX11_FILTER_LINEAR, magFilter = D3DX11_FILTER_LINEAR;
 
 		vec2 border = 2.f;
 		vec2 spacing = { 2.f, 2.f };
@@ -190,9 +187,9 @@ namespace prb {
 		void outlineColor(vec4 outlineColor);
 		vec4 outlineColor();
 
-		void setFiltering(GLint min, GLint mag);
-		GLint getMagFilter();
-		GLint getMinFilter();
+		void setFiltering(int min, int mag);
+		int getMagFilter();
+		int getMinFilter();
 
 		Texture getAtlas();
 

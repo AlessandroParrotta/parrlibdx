@@ -11,6 +11,7 @@ namespace prb {
 
 	namespace Input {
 
+		extern std::vector<unsigned int> textKeys;
 		extern int mWheel;
 
 		extern const int MOUSE_NORMAL;
@@ -25,6 +26,8 @@ namespace prb {
 		bool getKey(int key);
 		bool getKeyDown(int key);
 		bool getKeyDown(int key);
+
+		unsigned int pollTextKey();
 
 		vec2 getRawMousePos();
 		vec2 getRawMouseDelta();
@@ -79,6 +82,12 @@ namespace prb {
 
 		aabb2 getClientRect();
 		aabb2 getWindowRect();
+	
+		void copyToClipboard(std::wstring text);
+		std::wstring getFromClipboardw();
+
+		void copyToClipboard(std::wstring text);
+		std::string getFromClipboard();
 	}
 
 #ifndef PARRLIBDX_INPUT_H_SHORT

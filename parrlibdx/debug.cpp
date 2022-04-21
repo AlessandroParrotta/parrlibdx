@@ -74,7 +74,7 @@ namespace prb {
 		void debInit() {
 			//deb::out("initializing deb textrenderer\n");
 			//debtxr = TextRenderer({ getExeFolder() + "segoeui.ttf" }, 26);
-			debtxr = { { (getExeFolder() + "segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
+			debtxr = { { ("assets/fonts/segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
 			debtxr.color(vc4::white);
 			debtxr.setOutline(2);
 			//deb::out("initialized deb textrenderer\n");
@@ -180,15 +180,16 @@ namespace prb {
 			if (input::getKey(VK_PRIOR)) { //page up
 				if (input::getKey(VK_SHIFT))startOffset = (std::min)(-(int)strs.size() + debDrawLimit, 0);
 				else if (input::getKey(VK_LCONTROL)) startOffset--;
-				else startOffset -= offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
+				else startOffset += offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
 			}
 			else if (input::getKey(VK_NEXT)) { //page down
 				if (input::getKey(VK_SHIFT))startOffset = 0;
 				else if (input::getKey(VK_LCONTROL)) startOffset++;
-				else startOffset += offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
+				else startOffset -= offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
 			}
 			else offsetSpeed = 1.f;
-			startOffset = outl::clamp(startOffset, (std::min)(-(int)strs.size() + debDrawLimit, 0), debDrawLimit);
+			//startOffset = outl::clamp(startOffset, (std::min)(-(int)strs.size() + debDrawLimit, 0), debDrawLimit);
+			startOffset = outl::clamp(startOffset, 0, strs.size());
 
 			std::vector<std::wstring> debs = getDebs(ss.ss);
 			if (debs.size() > 0) strs.insert(strs.end(), debs.begin(), debs.end());
@@ -212,7 +213,9 @@ namespace prb {
 					sliderVal = 0.0f;
 				}
 
-				for (int i = strs.size() - 1; i >= 0; i--) {
+				startOffset = outl::imax(startOffset, 0);
+
+				for (int i = strs.size() - 1 - startOffset; i >= 0; i--) {
 					float ypos = -0.99f + cheight * (strs.size() - 1 - i - startOffset) - sliderVal;
 
 					if (ypos < -1.0f - cheight) continue;

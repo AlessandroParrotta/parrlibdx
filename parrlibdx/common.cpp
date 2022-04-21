@@ -1,5 +1,6 @@
 #include "common.h"
 
+#include "stringutils.h"
 #include "shader.h"
 
 namespace prb {
@@ -69,9 +70,9 @@ namespace prb {
     std::string getExeFolder() { return getFolder(getExeLocation()); }
 
     std::vector<byte> readFile(std::string name) {
-        std::string strloc = getExeFolder();
+        name = strup::fallbackPath(name);
 
-        std::ifstream f(strloc + name, std::ios::binary);
+        std::ifstream f(name, std::ios::binary);
 
         if (!f.is_open() || !f.good()) {
             //throw std::runtime_error("file could not be opened\n"); 

@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "vertexbuffer.h"
 #include "globals.h"
+#include "texture.h"
 
 namespace prb {
 	namespace Util {
@@ -46,7 +47,7 @@ namespace prb {
 			cbstrc.mat = 1.f;
 			defCB = cbuf(cbstrc);
 			defCB.setData(cbstrc);
-			uSh = { "utilv.cso", "utilp.cso", {
+			uSh = { "assets/shaders/utilv.cso", "assets/shaders/utilp.cso", {
 				{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 				{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			} };
@@ -720,11 +721,27 @@ namespace prb {
 			devcon->PSSetShaderResources(0, 1, &resView);
 			devcon->PSSetSamplers(0, 1, &sampler);
 		}
+
+		void bindTexture(Texture const& tex) { bindTexture(tex.resView, tex.sampler); }
+
 		void drawTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler, const mat3 mat) {
 			bindTexture(resView, sampler); drawTexture(mat);
 		}
 		void drawTexture(Texture const& t, const mat3 mat) { drawTexture(t.resView, t.sampler, mat); }
 		
+
+		void drawSubTex(Texture const& tex, vec2 const& txmin, vec2 const& txmax, mat3 const& transform){ 
+			vec2 v0 = mStack.back() * transform * vec2(-1.f, -1.f);
+			vec2 v1 = mStack.back() * transform * vec2(-1.f, 1.f);
+			vec2 v2 = mStack.back() * transform * vec2(1.f, 1.f);
+			vec2 v3 = mStack.back() * transform * vec2(1.f, -1.f);
+
+			bindTexture(tex);
+
+			drawTexture(transform, aabb2{ txmin, txmax });
+		}
+		void drawSubTex(Texture const& tex, aabb2 const& coord, aabb2 const& tx, mat3 const& transform){ drawSubTex(tex, tx.fmin(), tx.fmax(), transform * pmat3::translate(coord.center()) * pmat3::scale(coord.size() / 2.f)); }
+
 
 		std::unordered_map<int, TextRenderer> txrs;
 		outl::uniss text;
@@ -740,15 +757,15 @@ namespace prb {
 			text.str(L"");
 			text.clear();
 		}
-		void drawText(int const& fontSize, mat3 const& transform) { drawText(getExeFolder() + "segoeui.ttf", fontSize, transform); }
+		void drawText(int const& fontSize, mat3 const& transform) { drawText("assets/fonts/segoeui.ttf", fontSize, transform); }
 		void drawText(int const& fontSize, vec2 const& pos) { drawText(fontSize, pmat3::translate(pos)); }
-		void drawText(mat3 const& transform) { drawText(getExeFolder() + "segoeui.ttf", 15, transform); }
+		void drawText(mat3 const& transform) { drawText("assets/fonts/segoeui.ttf", 15, transform); }
 		void drawText(vec2 const& pos) { drawText(pmat3::translate(pos)); }
 
 		aabb2 getTextBound(std::string const& font, int const& fontSize, mat3 const& transform) {
 			if (txrs.find(fontSize) == txrs.end()) txrs[fontSize] = TextRenderer({ font }, fontSize);
 			return txrs[fontSize].getAABBpx(transform);
 		}
-		aabb2 getTextBound(mat3 const& transform) { return getTextBound(getExeFolder() + "segoeui.ttf", 15, transform); }
+		aabb2 getTextBound(mat3 const& transform) { return getTextBound("assets/fonts/segoeui.ttf", 15, transform); }
 	}
 }

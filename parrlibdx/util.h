@@ -27,6 +27,7 @@ inline void operator+=(std::vector<float>& a, std::vector<float> const& b) {
 #endif
 
 namespace prb {
+	class Texture;
 
 	namespace Util {
 
@@ -151,9 +152,15 @@ namespace prb {
 		void drawTexture(std::wstring const& path, const mat3 mat = 1.f);
 
 		void bindTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler);
+		void bindTexture(Texture const& tex);
+
 		void drawTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler, const mat3 mat = 1.f);
 		void drawTexture(Texture const& t, const mat3 mat = 1.f);
 	
+
+		void drawSubTex(Texture const& tex, vec2 const& txmin, vec2 const& txmax, mat3 const& transform);
+		void drawSubTex(Texture const& tex, aabb2 const& coord, aabb2 const& tx, mat3 const& transform);
+
 
 		extern outl::uniss text;
 		void drawText(std::string const& font, int const& fontSize, mat3 const& transform);
@@ -162,7 +169,7 @@ namespace prb {
 		void drawText(mat3 const& transform);
 		void drawText(vec2 const& pos);
 
-		template<typename... Args> inline void drawText(int const& fontSize, mat3 const& transform, Args... args) { text << stru::composew(args...); drawText(getExeFolder() + "segoeui.ttf", fontSize, transform); }
+		template<typename... Args> inline void drawText(int const& fontSize, mat3 const& transform, Args... args) { text << stru::composew(args...); drawText("assets/fonts/segoeui.ttf", fontSize, transform); }
 		template<typename... Args> inline void drawText(int const& fontSize, vec2 const& pos, Args... args) { text << stru::composew(args...); drawText(fontSize, pmat3::translate(pos)); }
 	}
 

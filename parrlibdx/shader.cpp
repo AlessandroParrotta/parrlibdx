@@ -5,6 +5,7 @@
 #include <parrlibcore/stringutils.h>
 #include <parrlibcore/otherutil.h>
 
+#include "stringutils.h"
 #include "debug.h"
 
 namespace prb {
@@ -77,6 +78,9 @@ namespace prb {
 
     Shader::Shader(std::string fileNameVS, std::string fileNamePS, std::vector<D3D11_INPUT_ELEMENT_DESC> vdesc, bool compileRuntime) {
         if (compileRuntime) {
+            fileNamePS = strup::fallbackPath(fileNamePS);
+            fileNameVS = strup::fallbackPath(fileNameVS);
+
             const D3D_SHADER_MACRO defines[] =
             {
                 "EXAMPLE_DEFINE", "1",

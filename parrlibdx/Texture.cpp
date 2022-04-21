@@ -145,9 +145,9 @@ namespace prb {
     Texture::Texture(vec2 size, int linesize) : Texture(size, linesize, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_SRV_DIMENSION_TEXTURE2D) {}
 
 
-    bool Texture::null() { return !texture || !resView || !sampler; }
+    bool Texture::null() const { return !texture || !resView || !sampler; }
 
-    vec2 Texture::getSize() { return { (float)width, (float)height }; }
+    vec2 Texture::getSize() const { return { (float)width, (float)height }; }
 
     void Texture::setData(unsigned char* data, vec2 size, int linesize) {
         if (linesize == width) linesize *= 4;
@@ -202,11 +202,11 @@ namespace prb {
         delete[] ndata;
     }
 
-    void Texture::drawImmediate(std::vector<float> const& verts) {
+    void Texture::drawImmediate(std::vector<float> const& verts) const {
         util::drawTexture(*this, verts);
     }
 
-    void Texture::drawImmediate(vec2 pos, vec2 size) {
+    void Texture::drawImmediate(vec2 pos, vec2 size) const {
         vec2 start = pos, end = pos + size;
         std::vector<float> verts = { //clockwise order
              start.x,start.y,       1.f,1.f,1.f,1.f,    0.f,1.f,
@@ -221,7 +221,7 @@ namespace prb {
         drawImmediate(verts);
     }
 
-    void Texture::bind() {
+    void Texture::bind() const {
         devcon->PSSetShaderResources(0, 1, &resView);
         devcon->PSSetSamplers(0, 1, &sampler);
     }

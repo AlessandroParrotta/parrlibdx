@@ -41,7 +41,7 @@ TextRenderer::TextRenderer(std::vector<std::string> const& fontNames, int const&
 
 	//atlas.tex.setFiltering(minFilter, magFilter);
 
-	sh = { "textRenderv.cso", "textRenderp.cso",
+	sh = { "assets/shaders/textRenderv.cso", "assets/shaders/textRenderp.cso",
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0,			0,								D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT, 0,			D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -251,11 +251,11 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 			vec2 size = 2.f, txmax;
 
 			glyph& g = ginfot->at(c);
-			pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == GL_LINEAR ? txBias : 0.f);
-			size = vec2(g.bitw, g.bitr) + (minFilter == GL_LINEAR ? txBias : 0.f) * 2.f;
+			pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
+			size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
 
-			txmin = g.txmin - (minFilter == GL_LINEAR ? txBias : 0.f);
-			txmax = g.txmax + (minFilter == GL_LINEAR ? txBias : 0.f);
+			txmin = g.txmin - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
+			txmax = g.txmax + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
 
 			cur += vec2(g.advx, g.advy);
 
@@ -396,8 +396,8 @@ void TextRenderer::drawString(std::string const& str, mat3 const& transform) { d
 void TextRenderer::drawString(std::string const& str, vec2 pos) { drawWString(stringutils::toWString(str), pmat3::translate(pos)); }
 
 void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& font, vec2 const& offset, mat3 const& transform) {
-	GLint oldMag = magFilter, oldMin = minFilter;
-	if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(GL_NEAREST, GL_NEAREST);
+	int oldMag = magFilter, oldMin = minFilter;
+	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(D3DX11_FILTER_POINT, D3DX11_FILTER_POINT);
 
 	//aabb2 bb = getAABBReal(str, font, 0.f, 1.f);
 
@@ -415,7 +415,7 @@ void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& fon
 	//drawWStringReal(str, font, offset, transform * util::getAspectOrtho().inverted() * pmat3::toNdc({0.f, cst::res()}) * pmat3::translate(cst::res()/2.f) * pmat3::translate(0.01f));
 	drawWStringReal(str, font, offset, transform * pmat3::toNdc({0.f, cst::res()}) * pmat3::translate(cst::res()/2.f) * pmat3::translate(0.01f));
 
-	if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(oldMin, oldMag);
+	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(oldMin, oldMag);
 }
 void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& font, mat3 const& transform) { drawWStringpx(str, font, 0.f, transform); }
 void TextRenderer::drawWStringpx(std::wstring const& str, vec2 const& offset, mat3 const& transform) { drawWStringpx(str, fontName, offset, transform); }
@@ -473,8 +473,8 @@ aabb2 TextRenderer::getAABBReal(std::wstring const& str, std::string const& font
 		else				gInfo = &fonts[cfont].gInfo;
 
 		glyph& g = (*gInfo)[c];
-		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == GL_LINEAR ? txBias : 0.f);
-		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == GL_LINEAR ? txBias : 0.f) * 2.f;
+		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
+		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
 		cur += vec2(g.advx, g.advy);
 
 		if (bb.fmin() == 0.f && bb.fmax() == 0.f) {
@@ -506,8 +506,8 @@ aabb2 TextRenderer::getAABB(std::wstring const& str, mat3 const& transform = 1.f
 aabb2 TextRenderer::getAABB(mat3 const& transform = 1.f) { return getAABB(wostr.str()); }
 
 aabb2 TextRenderer::getAABBpx(std::wstring const& str, std::string const& font, vec2 const& offset, mat3 const& transform = 1.f) {
-	GLint oldMag = magFilter, oldMin = minFilter;
-	if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(GL_NEAREST, GL_NEAREST);
+	int oldMag = magFilter, oldMin = minFilter;
+	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(D3DX11_FILTER_POINT, D3DX11_FILTER_POINT);
 
 	aabb2 bb = getAABBReal(str, font, offset, 1.f);
 
@@ -524,7 +524,7 @@ aabb2 TextRenderer::getAABBpx(std::wstring const& str, std::string const& font, 
 
 	//mat3 mul = transform * retranslate;
 
-	if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(oldMin, oldMag);
+	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(oldMin, oldMag);
 
 	//return mul * bb;
 	//return (transform * util::getAspectOrtho()* pmat3::toNdc({ 0.f, cst::res() }) * pmat3::translate(cst::res() / 2.f) * pmat3::translate(0.01f)) * bb;
@@ -593,8 +593,8 @@ TextRenderer::bwstring TextRenderer::getWStringBoundedReal(std::wstring const& s
 		else				gInfo = &fonts[cfont].gInfo;
 
 		glyph& g = (*gInfo)[c];
-		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == GL_LINEAR ? txBias : 0.f);
-		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == GL_LINEAR ? txBias : 0.f) * 2.f;
+		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
+		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
 		cur += vec2(g.advx, g.advy);
 
 		if (cur.x + modbb.size().x > bound.size().x) { resstr = resstr.substr(0, i); break; }
@@ -686,7 +686,7 @@ vec4 TextRenderer::color()								{ return vcolor; }
 void TextRenderer::outlineColor(vec4 outlineColor)		{ voutlineColor = outlineColor; }
 vec4 TextRenderer::outlineColor()						{ return voutlineColor; }
 
-void TextRenderer::setFiltering(GLint min, GLint mag) {
+void TextRenderer::setFiltering(int min, int mag) {
 	minFilter = min;
 	magFilter = mag;
 	//for (auto& f : fonts) {
@@ -696,8 +696,8 @@ void TextRenderer::setFiltering(GLint min, GLint mag) {
 	//}
 	//atlas.tex.setFiltering(min, mag);
 }
-GLint TextRenderer::getMagFilter() { return magFilter; }
-GLint TextRenderer::getMinFilter() { return minFilter; }
+int TextRenderer::getMagFilter() { return magFilter; }
+int TextRenderer::getMinFilter() { return minFilter; }
 
 //Texture TextRenderer::getOutlineAtlas(std::string const& font) { return fonts[font].outlineAtlas.atlas; }
 Texture TextRenderer::getAtlas() { return atlas.tex; }

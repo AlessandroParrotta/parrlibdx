@@ -38,9 +38,9 @@ namespace prb {
 		Texture(vec2 size, int linesize, DXGI_FORMAT format, D3D_SRV_DIMENSION viewDimension);
 		Texture(vec2 size, int linesize);
 
-		bool null();
+		bool null() const;
 
-		vec2 getSize();
+		vec2 getSize() const;
 
 		void setData(unsigned char* data, vec2 size, int linesize);
 		void setData(unsigned char* data, vec2 size);
@@ -49,13 +49,13 @@ namespace prb {
 		//extremely inefficient, DO NOT USE unless it's for testing
 		//this assumes there is already a shader bound to the device
 		//vertex layout should be {posX, posY, colorR, colorG, colorB, colorA, uvX, uvY}
-		void drawImmediate(std::vector<float> const& verts);
+		void drawImmediate(std::vector<float> const& verts) const;
 
 		//extremely inefficient, DO NOT USE unless it's for testing
 		//this assumes there is already a shader bound to the device
-		void drawImmediate(vec2 pos, vec2 size);
+		void drawImmediate(vec2 pos, vec2 size) const;
 
-		void bind();
+		void bind() const;
 
 		void dispose();
 	};

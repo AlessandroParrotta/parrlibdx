@@ -1,31 +1,42 @@
 #include "globals.h"
 
+#include "sprite.h"
+
 namespace prb {
 	namespace globals {
 		std::unordered_map<std::string, TextRenderer> txrs;
 		bool findTxr(std::string const& name) { return txrs.find(name) != txrs.end(); }
-		void setTxr(std::string const& name, std::string const& fontName, int const& fontSize) { txrs[name] = { { fontName }, fontSize }; }
-		TextRenderer& getTxr(std::string const& name) {
-			if (txrs.find(name) == txrs.end()) setTxr(name, "assets/fonts/segoeui.ttf", 24);
+		void txr(std::string const& name, std::vector<std::string> const& fonts, int const& fontSize){ txrs[name] = { fonts, fontSize }; }
+		void txr(std::string const& name, std::string const& fontName, int const& fontSize) { txrs[name] = { { fontName }, fontSize }; }
+		TextRenderer& txr(std::string const& name) {
+			if (txrs.find(name) == txrs.end()) txr(name, "assets/fonts/segoeui.ttf", 24);
 			return txrs[name];
 		}
 
 		std::unordered_map<std::string, Shader> shaders;
 		bool findShader(std::string const& name) { return shaders.find(name) != shaders.end(); }
-		void setShader(std::string const& name, Shader const& sh) {
+		void shader(std::string const& name, Shader const& sh) {
 			shaders[name] = sh;
 		}
-		Shader& getShader(std::string const& name) {
+		Shader& shader(std::string const& name) {
 			if (!findShader(name)) shaders[name] = { (name + "v.hlsl"), (name + "p.hlsl") };
 			return shaders[name];
 		}
 
+		std::unordered_map<std::string, Sprite> sprites;
+		bool findSprite(std::string const& name) { return sprites.find(name) != sprites.end(); }
+		void sprite(std::string const& name, Sprite const& s) { sprites[name] = s; }
+		Sprite& sprite(std::string const& name) {
+			if (sprites.find(name) == sprites.end()) sprites[name] = name.c_str();
+			return sprites[name];
+		}
+
 		std::unordered_map<std::string, FrameBuffer> fbufs;
 		bool findFrameBuffer(std::string const& name) { return shaders.find(name) != shaders.end(); }
-		void setFrameBuffer(std::string const& name, FrameBuffer const& fb) {
+		void frameBuffer(std::string const& name, FrameBuffer const& fb) {
 			fbufs[name] = fb;
 		}
-		FrameBuffer& getFrameBuffer(std::string const& name) {
+		FrameBuffer& frameBuffer(std::string const& name) {
 			if (!findFrameBuffer(name)) fbufs[name] = FrameBuffer({ 1.f,1.f });
 			return fbufs[name];
 		}

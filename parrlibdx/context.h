@@ -32,7 +32,7 @@ namespace prb {
 		funcs[6 | FENDRESIZE] = endresize --run once when the app stops being resized
 		funcs[7 | FPREUPDATE] = preupdate --run every frame before starting the new frame (before clearing the current frame)
 	*/
-	namespace DXContext {
+	namespace Context {
 		extern const int FINIT;
 		extern const int FUPDATE;
 		extern const int FDRAW;
@@ -45,6 +45,11 @@ namespace prb {
 
 		extern std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcPrec;
 		extern std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate;
+
+		extern vec2 wsize;
+		//extern aabb2 sbb;
+
+		void resize(vec2 size);
 
 		void setPeekMessageAction(UINT val);
 		UINT getPeekMessageAction();
@@ -89,6 +94,7 @@ namespace prb {
 			DeviceMode(vec2 res, int refreshRate, DEVMODE rawMode) : res(res), refreshRate(refreshRate), rawMode(rawMode) {}
 		};
 		extern std::vector<DeviceMode> vmodes;
+		extern std::vector<DeviceMode> vidmodes;
 
 		/*
 			Initializes the main DirectX11 context and starts running the application
@@ -141,5 +147,5 @@ namespace prb {
 		aabb2 getScreenBoundingBox();
 	}
 
-	namespace prc = DXContext;
+	namespace prc = Context;
 }

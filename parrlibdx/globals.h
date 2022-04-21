@@ -8,18 +8,25 @@
 #include "framebuffer.h"
 
 namespace prb {
+	class Sprite;
+
 	namespace globals {
 		bool findTxr(std::string const& name);
-		void setTxr(std::string const& name, std::string const& fontName, int const& fontSize);
-		TextRenderer& getTxr(std::string const& name);
+		void txr(std::string const& name, std::vector<std::string> const& fonts, int const& fontSize);
+		void txr(std::string const& name, std::string const& fontName, int const& fontSize);
+		TextRenderer& txr(std::string const& name);
 
 		bool findShader(std::string const& name);
-		void setShader(std::string const& name, Shader const& sh);
-		Shader& getShader(std::string const& name);
+		void shader(std::string const& name, Shader const& sh);
+		Shader& shader(std::string const& name);
+
+		bool findSprite(std::string const& name);
+		void sprite(std::string const& name, Sprite const& s);
+		Sprite& sprite(std::string const& name);
 
 		bool findFrameBuffer(std::string const& name);
-		void setFrameBuffer(std::string const& name, FrameBuffer const& fb);
-		FrameBuffer& getFrameBuffer(std::string const& name);
+		void frameBuffer(std::string const& name, FrameBuffer const& fb);
+		FrameBuffer& frameBuffer(std::string const& name);
 
 		bool findTexture(std::wstring const& path);
 		void setTexture(std::wstring const& path, Texture const& tex);

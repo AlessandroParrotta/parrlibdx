@@ -11,9 +11,10 @@
 #include "debug.h"
 #include "shader.h"
 #include "util.h"
+#include "debugmenu\debugmenu.h"
 
 namespace prb {
-    namespace DXContext {
+    namespace Context {
         const int F_SIZE = 8;
 
         const int FINIT = 0;
@@ -28,12 +29,15 @@ namespace prb {
 
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcPrec = [](HWND, UINT, WPARAM, LPARAM) {};
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate = [](HWND, UINT, WPARAM, LPARAM) {};
+         
+        vec2 wsize = 0.f;
 
         UINT peekMessageAction = PM_REMOVE;
         void setPeekMessageAction(UINT val) { prc::peekMessageAction = val; }
         UINT getPeekMessageAction() { return peekMessageAction; }
 
         std::vector<DeviceMode> vmodes;
+        std::vector<DeviceMode> vidmodes;
 
         vec2 wPos = 0.f;
         void setWindowPosition(vec2 wPos) { prc::wPos = wPos; }
@@ -101,6 +105,7 @@ namespace prb {
         bool oldResizing = false, resizing = false;
         bool isResizing() { return resizing; }
 
+        int oldMouseCursorDebug = input::MOUSE_NORMAL;
         void RenderFrame(void)
         {
             if (resizing && !oldResizing)   funcs[FSTARTRESIZE]();
@@ -132,11 +137,30 @@ namespace prb {
             UINT sampleMask = 0xffffffff;
             devcon->OMSetBlendState(g_pBlendStateNoBlend, NULL, sampleMask);
 
+            if (input::getKeyDown(VK_F1)) {
+                debugmenu::enabled = !debugmenu::enabled;
+
+                if (debugmenu::enabled) {
+                    oldMouseCursorDebug = input::getMouseStatus();
+                    if (input::getMouseStatus() != input::MOUSE_NORMAL) input::toggleMouseStatus();
+                }
+                else {
+                    input::setMouseStatus(oldMouseCursorDebug);
+                }
+            }
+
             util::multMatrix(util::getAspectOrtho());
 
             //deb::out("calling update\n");
             funcs[FUPDATE]();
             funcs[FDRAW]();
+
+            if (!debugmenu::enabled) imui::reset();
+
+            imui::setSpace(1.f);
+            if (debugmenu::enabled) {
+                debugmenu::update(); imui::reset();
+            }
 
             deb::drawDebStrs(cst::res());
 
@@ -199,7 +223,7 @@ namespace prb {
 
         void InitPipeline()
         {
-            defShader = Shader("defaultv.cso", "defaultp.cso",
+            defShader = Shader("assets/shaders/defaultv.cso", "assets/shaders/defaultp.cso",
                 {
                     {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
                     {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
@@ -207,7 +231,7 @@ namespace prb {
             );
             defShader.use();
 
-            defTexShader = Shader("texturev.cso", "texturep.cso");
+            defTexShader = Shader("assets/shaders/texturev.cso", "assets/shaders/texturep.cso");
         }
 
         void InitD3D(HWND hWnd)
@@ -330,6 +354,56 @@ namespace prb {
             devcon->Release();
         }
 
+        void resize(vec2 size) {
+            if (!swapchain) return;
+            RECT wrect; GetWindowRect(windowHwnd, &wrect);
+            wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+
+            RECT rect; GetClientRect(windowHwnd, &rect);
+            int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
+
+            devcon->OMSetRenderTargets(0, 0, 0);
+
+            backbuffer->Release();
+
+            ThrowIfFailed(swapchain->ResizeBuffers(0, nSizeX, nSizeY, DXGI_FORMAT_UNKNOWN, D3D11_CREATE_DEVICE_DEBUG));
+
+            // get the address of the back buffer
+            ID3D11Texture2D* pBackBuffer;
+            ThrowIfFailed(swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
+
+            // use the back buffer address to create the render target
+            ThrowIfFailed(dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer));
+            pBackBuffer->Release();
+
+            // set the render target as the back buffer
+            devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+
+
+            // Set the viewport
+            D3D11_VIEWPORT viewport;
+            ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+            viewport.TopLeftX = 0;
+            viewport.TopLeftY = 0;
+            viewport.Width = nSizeX;
+            viewport.Height = nSizeY;
+
+            devcon->RSSetViewports(1, &viewport);
+
+            AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+
+            cst::res(vec2(nSizeX, nSizeY));
+
+            resizing = true;
+
+            //funcs[FSTARTRESIZE]();
+            //funcs[FRESIZE]();       //TODO: fix start resize and end resize
+            //funcs[FENDRESIZE]();
+
+            RenderFrame();
+        }
+
         LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
 
@@ -345,50 +419,13 @@ namespace prb {
             case WM_SIZE:
             {
                 if (!swapchain) return 0;
-                //RECT rect; GetWindowRect(hWnd, &rect);
-                RECT rect; GetClientRect(hWnd, &rect);
+                RECT wrect; GetWindowRect(windowHwnd, &wrect);
+                wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+
+                RECT rect; GetClientRect(windowHwnd, &rect);
                 int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
 
-                devcon->OMSetRenderTargets(0, 0, 0);
-
-                backbuffer->Release();
-
-                ThrowIfFailed(swapchain->ResizeBuffers(0, nSizeX, nSizeY, DXGI_FORMAT_UNKNOWN, D3D11_CREATE_DEVICE_DEBUG));
-
-                // get the address of the back buffer
-                ID3D11Texture2D* pBackBuffer;
-                ThrowIfFailed(swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
-
-                // use the back buffer address to create the render target
-                ThrowIfFailed(dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer));
-                pBackBuffer->Release();
-
-                // set the render target as the back buffer
-                devcon->OMSetRenderTargets(1, &backbuffer, NULL);
-
-
-                // Set the viewport
-                D3D11_VIEWPORT viewport;
-                ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
-                viewport.TopLeftX = 0;
-                viewport.TopLeftY = 0;
-                viewport.Width = nSizeX;
-                viewport.Height = nSizeY;
-
-                devcon->RSSetViewports(1, &viewport);
-
-                AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-
-                cst::res(vec2(nSizeX, nSizeY));
-
-                resizing = true;
-
-                //funcs[FSTARTRESIZE]();
-                //funcs[FRESIZE]();       //TODO: fix start resize and end resize
-                //funcs[FENDRESIZE]();
-
-                RenderFrame();
+                resize(vec2(nSizeX, nSizeY));
             }break;
             case WM_MOUSEWHEEL:
             {
@@ -409,11 +446,30 @@ namespace prb {
                 }
                 break;
             }
+            case WM_KEYDOWN:
+            {
+                input::textKeys.push_back((int)wParam);
+            }
             }
 
             fWindowProcLate(hWnd, message, wParam, lParam);
 
             return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+
+        void getVideoModes() {
+            int iMode = 0;
+
+            DEVMODE defaultMode;
+            ZeroMemory(&defaultMode, sizeof(DEVMODE));
+            defaultMode.dmSize = sizeof(DEVMODE);
+
+            while (EnumDisplaySettings(NULL, iMode, &defaultMode)) {
+                deb::pr("display device ", defaultMode.dmFormName, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
+                vidmodes.push_back(DeviceMode(vec2(defaultMode.dmPelsWidth, defaultMode.dmPelsHeight), defaultMode.dmDisplayFrequency, defaultMode));
+                
+                iMode++;
+            }
         }
 
         void setup(HINSTANCE hInstance) {
@@ -451,6 +507,8 @@ namespace prb {
                 DispNum++;
             }
 
+            getVideoModes();
+
             const HWND hDesk = GetDesktopWindow();
             RECT desktop; GetWindowRect(hDesk, &desktop);
             if (cst::res() <= 0.f) cst::res(vec2(desktop.right, desktop.bottom));
@@ -486,6 +544,9 @@ namespace prb {
                 NULL,
                 hInstance,
                 NULL);
+
+            RECT wrect; GetWindowRect(windowHwnd, &wrect);
+            wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
             //THIS IS A GLOBAL COLOR CHANGE, EVEN OTHER PROGRAMS
             //int aElements[2] = { COLOR_WINDOW, COLOR_ACTIVECAPTION };
@@ -538,6 +599,13 @@ namespace prb {
             //framerateCap = maxRefreshRate;
 
             initialized = true;
+
+            imui::init();
+            imui::useAtlas("assets/sprites/atlas.png");
+            imui::setTxr("assets/fonts/segoeui.ttf", 32);
+            imui::setTextColor(vc4::black);
+
+            debugmenu::init();
 
             //deb::out("calling init\n");
             funcs[FINIT]();

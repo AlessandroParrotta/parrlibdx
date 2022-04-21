@@ -12,6 +12,7 @@ namespace prb {
 		const int KEYS_LENGTH = 349;
 		const int MOUSE_LENGTH = 31;
 
+		std::vector<unsigned int> textKeys;
 		int mWheel = 0;
 
 		const int MOUSE_NORMAL = 0;
@@ -68,6 +69,10 @@ namespace prb {
 			moldpos = mpos;
 			mpos = getRawMousePos();
 			mdelta = mpos - moldpos;
+
+			if (textKeys.size() > 0) {
+				textKeys.clear();
+			}
 		}
 
 		bool getKey(int key) {
@@ -80,6 +85,17 @@ namespace prb {
 
 		bool getKeyUp(int key) {
 			return !keys[key] && oldkeys[key];
+		}
+
+		unsigned int pollTextKey() {
+			if (textKeys.size() > 0) {
+				unsigned int val = textKeys[textKeys.size() - 1];
+				//textKeys.erase(textKeys.begin() + (textKeys.size()-1));
+				textKeys.pop_back();
+				return val;
+			}
+
+			return 0;
 		}
 
 		vec2 getRawMousePos() {
@@ -240,5 +256,68 @@ namespace prb {
 
 		aabb2 getClientRect() { RECT rec; GetClientRect(windowHwnd, &rec); return { {(float)rec.left,(float)rec.top}, { (float)rec.right,(float)rec.bottom } }; }
 		aabb2 getWindowRect() { RECT rec; GetWindowRect(windowHwnd, &rec); return { {(float)rec.left,(float)rec.top}, { (float)rec.right,(float)rec.bottom } }; }
+	
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#include <windows.h>
+
+		bool getCapsLockStatus() {
+			return GetKeyState(VK_CAPITAL) & 0x0001 != 0;
+		}
+
+		void copyToClipboard(std::wstring text) {
+			//HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (text.length() + 1));
+			//memcpy(GlobalLock(hMem), text.c_str(), (text.length() + 1));
+			//GlobalUnlock(hMem);
+			//OpenClipboard(0);
+			//EmptyClipboard();
+			//SetClipboardData(CF_UNICODETEXT, hMem);
+			//CloseClipboard();
+			if (OpenClipboard(0)) {
+				EmptyClipboard();
+				HGLOBAL hClipboardData;
+				hClipboardData = GlobalAlloc(GMEM_DDESHARE, sizeof(wchar_t) * (wcslen(text.c_str()) + 1));
+
+				WCHAR* pchData;
+				pchData = (WCHAR*)GlobalLock(hClipboardData);
+				wcscpy_s(pchData, (wcslen(text.c_str()) + 1), text.c_str());
+				GlobalUnlock(hClipboardData);
+				SetClipboardData(CF_UNICODETEXT, hClipboardData);
+				CloseClipboard();
+			}
+		}
+
+		std::wstring getFromClipboardw() {
+			OpenClipboard(0);
+
+			HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+			wchar_t* cText = static_cast<wchar_t*>(GlobalLock(hData));
+
+			std::wstring clipboard = std::wstring(cText);
+
+			GlobalUnlock(hData);
+
+			CloseClipboard();
+
+			return clipboard;
+		}
+
+#else
+
+		bool getCapsLockStatus() {
+			return false;
+		}
+
+		void copyToClipboard(std::wstring text) {
+			return;
+		}
+
+		std::wstring getFromClipboardw() {
+			return L"";
+		}
+
+#endif
+
+		void copyToClipboard(std::string text) { copyToClipboard(stru::towstr(text)); }
+		std::string getFromClipboard() { return stru::tostr(getFromClipboardw()); }
 	}
 }
