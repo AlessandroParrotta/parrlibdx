@@ -1,90 +1,425 @@
 #include "Input.h"
 
+#include <parrlibcore/physics2d/physutil2.h>
+#include <parrlibcore/vector2f.h>
 #include <parrlibcore/constants.h>
 
-#include "util.h"
+#include "Context.h"
 #include "debug.h"
 
+#include <iostream>
+
+
 namespace prb {
-	namespace Input {
+	namespace input {
+		void processInput(HWND* window);
+
 		HWND windowHwnd;
-
-		const int KEYS_LENGTH = 349;
-		const int MOUSE_LENGTH = 31;
-
-		std::vector<unsigned int> textKeys;
-		int mWheel = 0;
 
 		const int MOUSE_NORMAL = 0;
 		const int MOUSE_LOCKED = 1;
 		const int MOUSE_HIDDEN = 2;
 		int mouseStatus = MOUSE_NORMAL;
 
-		bool oldkeys[KEYS_LENGTH];
+		const int KEYS_LENGTH = 349;
+		const int MOUSE_LENGTH = 12;
+
+		bool oldKeys[KEYS_LENGTH];
 		bool keys[KEYS_LENGTH];
 
-		bool mkeys[MOUSE_LENGTH];
-		bool oldmkeys[MOUSE_LENGTH];
+		bool oldMouse[MOUSE_LENGTH];
+		bool mouse[MOUSE_LENGTH];
 
-		vec2 moldpos;
-		vec2 mpos;
-		vec2 mdelta;
+		std::vector<unsigned int> textKeys;
 
+		const int MOUSELEFT = 0, MOUSERIGHT = 1, MOUSEMIDDLE = 2;
 
-		void init(HWND hwnd) {
-			windowHwnd = hwnd;
+		Vector2f rawMousePos;
+		Vector2f mousePos;
+		Vector2f disabledMousePos;
+		Vector2f oldMousePos;
+		Vector2f mouseDelta;
+
+		int scrollWheel = 0;
+
+		int cursorMode = MOUSE_NORMAL;
+
+		float aspectRatio = 0.0f;
+
+		void init(HWND window) {
+			windowHwnd = window;
+
+			aspectRatio = cst::resaspect();
 			for (int i = 0; i < KEYS_LENGTH; i++) {
 				keys[i] = false;
+				oldKeys[i] = keys[i];
 			}
 
 			for (int i = 0; i < MOUSE_LENGTH; i++) {
-				mkeys[i] = false;
+				mouse[i] = false;
+				oldMouse[i] = keys[i];
 			}
 		}
 
-		void update() {
+		void processInput() {
+			/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+				glfwSetWindowShouldClose(window, true);*/
+
 			HWND foc = GetFocus();
 
-			for (int i = 0; i < KEYS_LENGTH; i++) {
-				oldkeys[i] = keys[i];
-			}
-
-			for (int i = 0; i < MOUSE_LENGTH; i++) oldmkeys[i] = mkeys[i];
-
 			if (foc == windowHwnd) {
-				for (int i = 0; i < 256; i++) {
+				for (int i = 0; i < KEYS_LENGTH; i++) {
 					keys[i] = GetAsyncKeyState(i);
 				}
 
-				mkeys[0] = GetKeyState(VK_LBUTTON) < 0;
-				mkeys[1] = GetKeyState(VK_RBUTTON) < 0;
-				mkeys[2] = GetKeyState(VK_MBUTTON) < 0;
-				mkeys[3] = GetKeyState(VK_XBUTTON1) < 0;
-				mkeys[4] = GetKeyState(VK_XBUTTON2) < 0;
+				mouse[0] = GetKeyState(VK_LBUTTON) < 0;
+				mouse[1] = GetKeyState(VK_RBUTTON) < 0;
+				mouse[2] = GetKeyState(VK_MBUTTON) < 0;
+				mouse[3] = GetKeyState(VK_XBUTTON1) < 0;
+				mouse[4] = GetKeyState(VK_XBUTTON2) < 0;
 			}
 			else {
 				for (int i = 0; i < KEYS_LENGTH; i++) if (keys[i]) keys[i] = false;
 			}
 
-			moldpos = mpos;
-			mpos = getRawMousePos();
-			mdelta = mpos - moldpos;
+			//for (int i = 0; i < MOUSE_LENGTH; i++) {
+			//	if (glfwGetMouseButton(window, i) == GLFW_PRESS) {
+			//		mouse[i] = true;
+			//	}
+			//	else {
+			//		mouse[i] = false;
+			//	}
+			//}
+
+			POINT p;
+			GetCursorPos(&p);
+
+			RECT rec;
+			GetWindowRect(windowHwnd, &rec);
+
+			//RECT crec;
+			//GetClientRect(windowHwnd, &crec);
+
+			rawMousePos = { (float)p.x - (float)rec.left - 8, (float)p.y - (float)rec.top - 31 };
+
+			mouseDelta = mousePos - oldMousePos;
+			mousePos = getRawMousePos();
+			oldMousePos = mousePos;
+
+			//if (textKeys.size() > 0) {
+			//	textKeys.clear();
+			//}
+		}
+
+		struct MouseLayer {
+			Vector2f pos, size;
+			int tag = 0;
+
+			MouseLayer() {
+
+			}
+
+			MouseLayer(Vector2f pos, Vector2f size) {
+				this->pos = pos;
+				this->size = size;
+			}
+
+			MouseLayer(Vector2f pos, Vector2f size, int tag) {
+				this->pos = pos;
+				this->size = size;
+				this->tag = tag;
+			}
+		};
+
+		std::vector<MouseLayer> mouseLayers;
+		std::vector<MouseLayer> mouseLayersCurFrame;
+		int mLayerID = 0;
+
+		/*std::vector<std::string> activeLayers(0);
+		std::vector<std::string> mouseActiveLayers(0);
+
+		std::string activeLayer = "default";
+		std::string mouseActiveLayer = "default";*/
+
+		std::vector<unsigned long> activeLayers;
+		std::vector<unsigned long> mouseActiveLayers;
+
+		void update() {
+			for (int i = 0; i < KEYS_LENGTH; i++) oldKeys[i] = keys[i];
+			for (int i = 0; i < MOUSE_LENGTH; i++) oldMouse[i] = mouse[i];
+			
+			scrollWheel = 0;
 
 			if (textKeys.size() > 0) {
 				textKeys.clear();
 			}
+
+			if (mouseLayersCurFrame.size() > 0) {
+				mouseLayers.clear();
+				mouseLayers.insert(mouseLayers.begin() + 0, mouseLayersCurFrame.begin(), mouseLayersCurFrame.end());
+
+				mouseLayersCurFrame.clear();
+			}
+			else {
+				if (mouseLayers.size() > 0) {
+					mouseLayers.clear();
+				}
+			}
+			mLayerID = 0;
+
+			/*activeLayers.clear();
+			mouseActiveLayers.clear();*/
+
+			//debug::rtPrintln((int)mouseLayers.size());
+			//debug::rtPrintln((int)mouseLayersCurFrame.size());
+		}
+
+		unsigned long input_layers_ids = INPUT_LAYER_RESERVED;
+		unsigned long pollLayerId() {
+			input_layers_ids++;
+			return input_layers_ids - 1;
+		}
+
+		/*void setActiveAlgorithm(std::string &activeLayer, std::string &rActiveLayer, std::vector<std::string> &vRef) {
+			if (rActiveLayer.compare("default") == 0)  vRef.clear();
+			if (rActiveLayer.compare(activeLayer) == 0) return;
+
+			bool found = false;
+			for (int i = vRef.size() - 1; i >= 0; i++) {
+				if (activeLayer.compare(vRef[i]) == 0) {
+					vRef.erase(vRef.begin() + i, vRef.end());
+					found = true;
+				}
+			}
+
+			if (!found) {
+				vRef.push_back(rActiveLayer);
+			}
+
+			rActiveLayer = activeLayer;
+		}*/
+
+		//void setActiveLayer(std::string activeLayer) {
+		//	//setActiveAlgorithm(activeLayer, input::activeLayer, activeLayers);
+		//}
+
+		//void setMouseActiveLayer(std::string mouseActiveLayer) {
+		//	//setActiveAlgorithm(mouseActiveLayer, input::mouseActiveLayer, mouseActiveLayers);
+		//}
+
+		/*std::string getActiveLayer() {
+			return activeLayer;
+		}*/
+
+		/*void resetActiveLayer() {
+			if (activeLayers.size() > 0) {
+				activeLayer = activeLayers.back();
+				activeLayers.pop_back();
+			}
+			else {
+				activeLayer = "default";
+			}
+		}*/
+
+		/*void resetMouseActiveLayer() {
+			if (mouseActiveLayers.size() > 0) {
+				mouseActiveLayer = mouseActiveLayers.back();
+				mouseActiveLayers.pop_back();
+			}
+			else {
+				mouseActiveLayer = "default";
+			}
+
+		}*/
+
+		int findActiveLayer(unsigned long layer) {
+			int pos = -1;
+			for (int i = 0; i < activeLayers.size() && pos == -1; i++) {
+				if (layer == activeLayers[i])pos = i;
+			}
+
+			return pos;
+		}
+
+		void addActiveLayer(unsigned long layer) {
+			if (layer == 0)return;
+
+			int pos = findActiveLayer(layer);
+			if (pos != -1)return;
+
+			activeLayers.push_back(layer);
+		}
+
+		void removeActiveLayer(unsigned long layer) {
+			if (layer == 0)return;
+
+			int pos = findActiveLayer(layer);
+			if (pos == -1)return;
+
+			activeLayers.erase(activeLayers.begin() + pos);
+		}
+
+		bool isLayerActive(unsigned long layer) {
+			if (layer == 0)return true;
+			return findActiveLayer(layer) != -1;
+		}
+
+		bool getKey(int key, unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				return keys[key];
+			}
+			else {
+				return false;
+			}
+		}
+
+		bool getKeyDown(int key, unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				return keys[key] && !oldKeys[key];
+			}
+			else {
+				return false;
+			}
+		}
+
+		bool getKeyUp(int key, unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				return !keys[key] && oldKeys[key];
+			}
+			else {
+				return false;
+			}
 		}
 
 		bool getKey(int key) {
-			return keys[key];
+			return getKey(key, INPUT_LAYER_DEFAULT);
 		}
 
 		bool getKeyDown(int key) {
-			return keys[key] && !oldkeys[key];
+			return getKeyDown(key, INPUT_LAYER_DEFAULT);
 		}
 
 		bool getKeyUp(int key) {
-			return !keys[key] && oldkeys[key];
+			return getKeyUp(key, INPUT_LAYER_DEFAULT);
+		}
+
+		/*bool callOrFor(int key, std::vector<unsigned long> layers, std::function<bool(int key, unsigned long layer)> func) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = func(key, layers[i]);
+			}
+			return result;
+		}*/
+
+		bool getKey(int key, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getKey(key, layers[i]);
+			}
+			return result;
+		}
+
+		bool getKeyDown(int key, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getKeyDown(key, layers[i]);
+			}
+			return result;
+		}
+
+		bool getKeyUp(int key, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getKeyUp(key, layers[i]);
+			}
+			return result;
+		}
+
+		int getAnyKeyDown(unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				for (int i = 0; i < KEYS_LENGTH; i++) {
+					if (getKeyDown(i, layer)) {
+						return i;
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		int getAnyKey(unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				for (int i = 0; i < KEYS_LENGTH; i++) {
+					if (getKey(i, layer)) {
+						return i;
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		int getAnyKeyUp(unsigned long layer) {
+			if (layer == 0 || isLayerActive(layer)) {
+				for (int i = 0; i < KEYS_LENGTH; i++) {
+					if (getKeyUp(i, layer)) {
+						return i;
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		int getAnyKeyDown(std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getAnyKeyDown(layers[i]);
+			}
+			return result;
+		}
+
+		int getAnyKey(std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getAnyKey(layers[i]);
+			}
+			return result;
+		}
+
+		int getAnyKeyUp(std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getAnyKeyUp(layers[i]);
+			}
+			return result;
+		}
+
+		std::vector<int> getPressedKeys() {
+			std::vector<int> keys;
+			for (int i = 0; i < KEYS_LENGTH; i++) {
+				if (getKey(i)) keys.push_back(i);
+
+			}
+			return keys;
+		}
+
+		std::vector<int> getPressedKeysDown() {
+			std::vector<int> keys;
+			for (int i = 0; i < KEYS_LENGTH; i++) {
+				if (getKeyDown(i)) keys.push_back(i);
+
+			}
+			return keys;
+		}
+
+		std::vector<int> getPressedKeysUp() {
+			std::vector<int> keys;
+			for (int i = 0; i < KEYS_LENGTH; i++) {
+				if (getKeyUp(i)) keys.push_back(i);
+
+			}
+			return keys;
 		}
 
 		unsigned int pollTextKey() {
@@ -98,52 +433,91 @@ namespace prb {
 			return 0;
 		}
 
-		vec2 getRawMousePos() {
-			POINT p;
-			GetCursorPos(&p);
-
-			RECT rec;
-			GetWindowRect(windowHwnd, &rec);
-
-			//RECT crec;
-			//GetClientRect(windowHwnd, &crec);
-
-			return { (float)p.x - (float)rec.left - 8, (float)p.y - (float)rec.top - 31 };
+		int getAnyKeyDown() {
+			return getAnyKeyDown(INPUT_LAYER_DEFAULT);
 		}
 
-		vec2 getRawMouseDelta() {
-			return mdelta;
+		int getAnyKey() {
+			return getAnyKey(INPUT_LAYER_DEFAULT);
 		}
 
-		vec2 getMousePos() {
-			return (util::getAspectOrtho().inverted() *  (mpos / getClientRect().size() * 2.f - 1.f)).ny();
+		int getAnyKeyUp() {
+			return getAnyKeyUp(INPUT_LAYER_DEFAULT);
 		}
 
-		vec2 getMouseDelta() {
-			return mdelta / getClientRect().size() * 2.f;
+		bool getMouse(int button, unsigned long layer) {
+			return (layer == 0 || isLayerActive(layer)) && mouse[button];
 		}
 
-		int getMWheel() { return mWheel; }
+		bool getMouseDown(int button, unsigned long layer) {
+			return (layer == 0 || isLayerActive(layer)) && mouse[button] && !oldMouse[button];
+		}
 
-		bool getMouse(int button) { return mkeys[button]; }
-		bool getMouseDown(int button) { return mkeys[button] && !oldmkeys[button]; }
-		bool getMouseUp(int button) { return !mkeys[button] && oldmkeys[button]; }
+		bool getMouseUp(int button, unsigned long layer) {
+			return (layer == 0 || isLayerActive(layer)) && !mouse[button] && oldMouse[button];
+		}
 
+		int getMouseScrollWheel(unsigned long layer) {
+			return (layer == 0 || isLayerActive(layer)) ? scrollWheel : 0;
+		}
 
-		bool leftMouse() { return getMouse(0); }
-		bool rightMouse() { return getMouse(1); }
-		bool middleMouse() { return getMouse(2); }
-		bool mouse() { return getMouse(0); }
+		int getMWheel() { return getMouseScrollWheel(INPUT_LAYER_DEFAULT); }
+
+		bool getMouse(int button) {
+			return getMouse(button, INPUT_LAYER_DEFAULT);
+		}
+
+		bool getMouseDown(int button) {
+			return getMouseDown(button, INPUT_LAYER_DEFAULT);
+		}
+
+		bool getMouseUp(int button) {
+			return getMouseUp(button, INPUT_LAYER_DEFAULT);
+		}
+
+		int getMouseScrollWheel() {
+			return getMouseScrollWheel(INPUT_LAYER_DEFAULT);
+		}
+
+		bool getMouse(int button, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getMouse(button, layers[i]);
+			}
+			return result;
+		}
+
+		bool getMouseDown(int button, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getMouseDown(button, layers[i]);
+			}
+			return result;
+		}
+
+		bool getMouseUp(int button, std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getMouseUp(button, layers[i]);
+			}
+			return result;
+		}
 
 		bool leftClick() { return getMouseUp(0); }
 		bool rightClick() { return getMouseUp(1); }
-		bool middleClick() { return getMouseUp(2); }
-		bool click() { return getMouseUp(0); }
+		bool click() { return leftClick(); }
 
 		bool leftClickDown() { return getMouseDown(0); }
 		bool rightClickDown() { return getMouseDown(1); }
-		bool middleClickDown() { return getMouseDown(2); }
 		bool clickDown() { return getMouseDown(0); }
+
+		int getMouseScrollWheel(std::vector<unsigned long> layers) {
+			bool result = false;
+			for (int i = 0; i < layers.size() && !result; i++) {
+				result = getMouseScrollWheel(layers[i]);
+			}
+			return result;
+		}
 
 
 		void setMouseVisible(bool visible) {
@@ -178,85 +552,180 @@ namespace prb {
 		int getMouseStatus() { return mouseStatus; }
 		void toggleMouseStatus() { if (mouseStatus == MOUSE_NORMAL || mouseStatus == MOUSE_HIDDEN) setMouseStatus(MOUSE_LOCKED); else setMouseStatus(MOUSE_NORMAL); }
 
+		Vector2f getMousePosNdc() {
+			if (getCursorInputMode() == MOUSE_LOCKED) return disabledMousePos;
+			else return (mousePos / prc::wres() * 2.f - 1.f).ny();
+		}
+
+		vec2 getMousePos() { return util::getAspectOrtho().inverted() * (!prc::inApp ? 1.f : pmat3::getNdc(prc::sbb)) * getMousePosNdc(); }
 
 		vec2 getIAxis2() {
 			return vec2(
-				getKey('D') - getKey('A'),
-				getKey('W') - getKey('S')
+				input::getKey('D') - input::getKey('A'),
+				input::getKey('W') - input::getKey('S')
 			);
 		}
 
 		vec3 getIAxis3() {
 			return vec3(
-				getKey('D') - getKey('A'),
-				getKey(VK_SPACE) - getKey('C'),
-				getKey('W') - getKey('S')
+				input::getKey('D') - input::getKey('A'),
+				input::getKey(VK_SPACE) - input::getKey('C'),
+				input::getKey('W') - input::getKey('S')
 			);
 		}
 
-		bool getAnyButtonMouseOrKeyboard() {
-			for (int i = 1; i < KEYS_LENGTH; i++) if (keys[i])return true;
-			for (int i = 1; i < MOUSE_LENGTH; i++) if (mkeys[i]) return true;
-			if (mWheel != 0) return true;
-			return false;
-		}
+		struct inputcombo {
+			std::vector<unsigned int> keys;
+		};
+		std::unordered_map<std::string, std::vector<inputcombo>> actions;
 
-		bool getAnyInputMouseOrKeyboard() {
-			for (int i = 1; i < KEYS_LENGTH; i++) if (keys[i]) return true;
-			for (int i = 1; i < MOUSE_LENGTH; i++) if (mkeys[i]) return true;
-			if (mdelta.abs().magnitude() > 0.f) return true;
-			if (mWheel != 0) return true;
-			return false;
-		}
+		bool runActionFunc(std::string const& ac, bool (*f)(int)) {
+			bool res = false;
 
-		int returnAnyButtonMouseOrKeyboard() {
-			for (int i = 1; i < KEYS_LENGTH; i++) if (keys[i]) return i;
-			for (int i = 1; i < MOUSE_LENGTH; i++) if (mkeys[i]) return KEYS_LENGTH + i;
-			if (mWheel != 0) return -2;
-			return 0;
-		}
+			for (auto& ic : actions[ac]) {
+				for (auto& k : ic.keys) {
+					res &= f(k);
+					if (!res) break;
+				}
 
-		int returnAnyInputMouseOrKeyboard() {
-			for (int i = 1; i < KEYS_LENGTH; i++) if (keys[i]) return i;
-			for (int i = 1; i < MOUSE_LENGTH; i++) if (mkeys[i]) return KEYS_LENGTH + i;
-			if (mdelta.abs().magnitude() > 0.f) return -1;
-			if (mWheel != 0) return -2;
-			return 0;
-		}
-
-		std::vector<int> getPressedKeys() {
-			std::vector<int> keys;
-			for (int i = 1; i < KEYS_LENGTH; i++) {
-				if (getKey(i)) keys.push_back(i);
-
+				if (res) return true;
 			}
-			return keys;
+
+			return res;
 		}
 
-		std::vector<int> getPressedKeysDown() {
-			std::vector<int> keys;
-			for (int i = 1; i < KEYS_LENGTH; i++) {
-				if (getKeyDown(i)) keys.push_back(i);
+		bool getAction(std::string const& ac) {
+			return runActionFunc(ac, &getKey);
+		}
 
+		bool getActionDown(std::string const& ac) {
+			return runActionFunc(ac, &getKeyDown);
+		}
+
+		bool getActionUp(std::string const& ac) {
+			return runActionFunc(ac, &getKeyUp);
+		}
+
+		float getMouseX() {
+			return mousePos.x;
+		}
+
+		float getMouseY() {
+			return mousePos.y;
+		}
+
+		/*float getMouseYInv() {
+			return constants::HEIGHT - mousePos.y;
+		}*/
+
+		/*Vector2f getMousePosInv() {
+			return Vector2f(getMousePos().x, constants::HEIGHT - getMousePos().y);
+		}*/
+
+		Vector2f getRawMousePos() {
+			return rawMousePos;
+		}
+
+		Vector2f getRawMousePosInv() {
+			return Vector2f(getRawMousePos().x, prc::wsize.y - getRawMousePos().y);
+		}
+
+		/*Vector2f getMousePerc() {
+			return Vector2f((getMousePos().x - constants::WIDTH / 2.0f) / (constants::WIDTH / 2.0f), 0.0f - (getMousePos().y - (constants::HEIGHT / 2.0f)) / ((constants::HEIGHT / 2.0f)));
+		}
+
+		Vector2f getMouseOrtho() {
+			Vector2f m = getMousePos();
+			return Vector2f(prc::orthoLeft + (prc::orthoRight - prc::orthoLeft)*((m.x)/(constants::WIDTH)),
+							prc::orthoBottom + (prc::orthoTop - prc::orthoBottom)*(1.0f - (m.y) / (constants::HEIGHT)));
+		}*/
+
+		/*Vector2f getMouseCoordsNormalized() {
+			return Vector2f((getMousePos().x - constants::WIDTH / 2.0f) / (constants::WIDTH / 2.0f), 0.0f - (getMousePos().y - (constants::HEIGHT / 2.0f)) / ((constants::HEIGHT / 2.0f))*aspectRatio);
+		}
+
+		Vector2f getMouseCoords() {
+			return getMouseCoordsNormalized() - util::camPos;
+		}*/
+
+		Vector2f getMouseDeltaConst() {
+			return mouseDelta / vec2(1920.f, 1080.f) * 60.f; //180.f/3.f, about 180deg in 20cm in a 1920x1080 screen with default windows mouse settings, feels right to me
+		}
+
+		Vector2f getMouseDelta() {
+			return (mouseDelta / cst::res() * 2.f * cst::res().aspectmaxv()).ny();
+		}
+
+		Vector2f getRawMouseDelta() {
+			return mouseDelta;
+		}
+
+		/*Vector2f getMouseDeltaOrtho() {
+			return Vector2f((mouseDelta.x / (float)constants::WIDTH) * (prc::orthoRight - prc::orthoLeft),
+							(mouseDelta.y / (float)constants::HEIGHT) * (prc::orthoTop - prc::orthoBottom));
+		}
+
+		Vector2f getMouseDeltaCoords() {
+			return Vector2f(mouseDelta.x/(float)constants::WIDTH, mouseDelta.y/(float)constants::HEIGHT);
+		}*/
+
+		//values can be MOUSE_NORMAL, MOUSE_LOCKED, MOUSE_HIDDEN, alias for setMouseStatus()
+		void setCursorInputMode(int inputMode) {
+			setMouseStatus(inputMode);
+			cursorMode = getMouseStatus();
+		}
+
+		int getCursorInputMode() {
+			return cursorMode;
+		}
+
+		void toggleCursorInputMode() {
+			if (getCursorInputMode() == MOUSE_LOCKED) setCursorInputMode(MOUSE_NORMAL);
+			else if (getCursorInputMode() == MOUSE_NORMAL) setCursorInputMode(MOUSE_LOCKED);
+		}
+
+		bool getMouseInQuadDefault(Vector2f quadPos, Vector2f quadSize) {
+			//Vector2f mouse = getMouseCoords();
+			//Vector2f mouse = getMouseOrtho();
+			Vector2f mouse = getMousePos();
+
+			return mouse.x >= quadPos.x && mouse.x <= quadPos.x + quadSize.x &&
+				mouse.y >= quadPos.y && mouse.y <= quadPos.y + quadSize.y;
+		}
+
+		bool getMouseInQuad(Vector2f quadPos, Vector2f quadSize, int tag) {
+			bool inQuad = false;
+			if (mouseLayers.size() == 0) {
+				inQuad = getMouseInQuadDefault(quadPos, quadSize);
 			}
-			return keys;
-		}
+			else {
+				if (getMouseInQuadDefault(quadPos, quadSize)) {
 
-		std::vector<int> getPressedKeysUp() {
-			std::vector<int> keys;
-			for (int i = 1; i < KEYS_LENGTH; i++) {
-				if (getKeyUp(i)) keys.push_back(i);
-
+					inQuad = true;
+					for (int i = mLayerID + 1; i < mouseLayers.size() && inQuad; i++) {
+						if (tag >= 0) {
+							inQuad = !(getMouseInQuadDefault(mouseLayers[i].pos, mouseLayers[i].size) && mouseLayers[i].tag != tag);
+						}
+						else {
+							inQuad = !getMouseInQuadDefault(mouseLayers[i].pos, mouseLayers[i].size);
+						}
+					}
+				}
 			}
-			return keys;
+
+			mouseLayersCurFrame.push_back(MouseLayer(quadPos, quadSize, tag));
+			mLayerID++;
+
+			return inQuad;
 		}
 
-		bool mouseInQuad(aabb2 const& bb) { return bb.pointInside(getMousePos().ny()); }
+		bool getMouseInQuad(Vector2f quadPos, Vector2f quadSize) {
+			return getMouseInQuad(quadPos, quadSize, -1);
+		}
+
+		bool mouseInQuad(aabb2 const& bb) { return psu2::checkCollisionb(input::getMousePos(), bb); }
 		bool mouseInQuad(vec2 const& pos, vec2 const& size) { return mouseInQuad({ pos, pos + size }); }
 
-		aabb2 getClientRect() { RECT rec; GetClientRect(windowHwnd, &rec); return { {(float)rec.left,(float)rec.top}, { (float)rec.right,(float)rec.bottom } }; }
-		aabb2 getWindowRect() { RECT rec; GetWindowRect(windowHwnd, &rec); return { {(float)rec.left,(float)rec.top}, { (float)rec.right,(float)rec.bottom } }; }
-	
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 #include <windows.h>
 

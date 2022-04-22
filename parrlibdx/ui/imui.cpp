@@ -974,7 +974,7 @@ namespace prb {
 		}
 
 		void reset() {
-			if (ststack.size() > 0) { std::cout << "warning: degenerate imui stack at end of frame!\n"; ststack.st.clear(); }
+			if (ststack.size() > 0) { deb::out("warning: degenerate imui stack at end of frame!\n"); ststack.st.clear(); }
 			//if(containers.size() > 0) containers.clear();
 
 			if (dropmenu) {	//there can only be one dropmenu activated at one time
@@ -1022,7 +1022,7 @@ namespace prb {
 			bool rem = true;
 			while (rem) {
 				rem = false;
-				for (auto& c : pingContainers) if (!c.second) { containers.erase(c.first); pingContainers.erase(c.first); posContainers.erase(c.first); rem = true; break; }
+				for (auto& c : pingContainers) if (!c.second) { containers.erase(c.first);  posContainers.erase(c.first); pingContainers.erase(c.first); rem = true; break; }
 			}
 		
 

@@ -29,8 +29,14 @@ namespace prb {
 
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcPrec = [](HWND, UINT, WPARAM, LPARAM) {};
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate = [](HWND, UINT, WPARAM, LPARAM) {};
-         
-        vec2 wsize = 0.f;
+
+        bool inApp = false;
+
+        vec2 wsize = 0.f;		//frontbuffer size
+        aabb2 wbb = 0.f;		//frontbuffer bounding box
+        aabb2 sbb = 0.f;		//logical screen bounding box
+
+        vec2 wres() { return wsize; }
 
         UINT peekMessageAction = PM_REMOVE;
         void setPeekMessageAction(UINT val) { prc::peekMessageAction = val; }
@@ -136,6 +142,8 @@ namespace prb {
             //float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
             UINT sampleMask = 0xffffffff;
             devcon->OMSetBlendState(g_pBlendStateNoBlend, NULL, sampleMask);
+            
+            input::processInput();
 
             if (input::getKeyDown(VK_F1)) {
                 debugmenu::enabled = !debugmenu::enabled;
@@ -149,13 +157,19 @@ namespace prb {
                 }
             }
 
+            sbb = { 0.f, wsize }; sbb = pmat3::getNdc(wbb) * sbb;
+
             util::multMatrix(util::getAspectOrtho());
+
+            inApp = true;
 
             //deb::out("calling update\n");
             funcs[FUPDATE]();
             funcs[FDRAW]();
 
             if (!debugmenu::enabled) imui::reset();
+
+            inApp = false;
 
             imui::setSpace(1.f);
             if (debugmenu::enabled) {
@@ -174,7 +188,7 @@ namespace prb {
             util::mStack.clear();
             util::mStack.push_back(1.f);
 
-            Input::mWheel = 0;
+            input::scrollWheel = 0;
 
             oldResizing = resizing;
             resizing = false;
@@ -359,6 +373,8 @@ namespace prb {
             RECT wrect; GetWindowRect(windowHwnd, &wrect);
             wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
+            wbb = { 0.f, wsize };
+
             RECT rect; GetClientRect(windowHwnd, &rect);
             int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
 
@@ -430,7 +446,7 @@ namespace prb {
             case WM_MOUSEWHEEL:
             {
                 short wval = (short)(wParam >> 16);
-                Input::mWheel = (wval > 0 ? 1 : (wval < 0 ? -1 : 0));
+                input::scrollWheel = (wval > 0 ? 1 : (wval < 0 ? -1 : 0));
             }break;
             case WM_PAINT:
             {
@@ -446,9 +462,15 @@ namespace prb {
                 }
                 break;
             }
-            case WM_KEYDOWN:
+            //case WM_KEYDOWN:
+            //{
+            //    input::textKeys.push_back((int)wParam);
+            //    break;
+            //}
+            case WM_CHAR:
             {
                 input::textKeys.push_back((int)wParam);
+                break;
             }
             }
 
@@ -548,6 +570,8 @@ namespace prb {
             RECT wrect; GetWindowRect(windowHwnd, &wrect);
             wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
+            wbb = { 0.f, wsize };
+
             //THIS IS A GLOBAL COLOR CHANGE, EVEN OTHER PROGRAMS
             //int aElements[2] = { COLOR_WINDOW, COLOR_ACTIVECAPTION };
             //DWORD aNewColors[]{RGB(0xFF, 0xFF, 0xFF), RGB(0xFF, 0xFF, 0xFF)};
@@ -581,9 +605,11 @@ namespace prb {
 
             //deb::out("inited D3D\n");
 
+            input::addActiveLayer(INPUT_LAYER_DEFAULT);
+
             util::init();
 
-            Input::init(windowHwnd);
+            input::init(windowHwnd);
             deb::debInit();
 
             MSG msg;
@@ -625,11 +651,6 @@ namespace prb {
                     }
                 }
 
-                Input::update();
-
-                funcs[FPREUPDATE]();
-                //if (skipFrameb) { skipFrameb = false; return; }
-
                 if (skipFrameb) {
                     deltaLater = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<uint64_t, std::nano> timeDiff = deltaLater - deltaNow;
@@ -661,6 +682,11 @@ namespace prb {
                     }
                 }
                 else { deb::rtss.clear(); deb::rtss.str(L""); }
+
+                input::update();
+
+                funcs[FPREUPDATE]();
+                //if (skipFrameb) { skipFrameb = false; return; }
 
                 skipFrameb = false;
             }

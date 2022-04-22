@@ -46,8 +46,12 @@ namespace prb {
 		extern std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcPrec;
 		extern std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate;
 
+		extern bool inApp;
+
 		extern vec2 wsize;
-		//extern aabb2 sbb;
+		extern aabb2 sbb;
+
+		vec2 wres();
 
 		void resize(vec2 size);
 

@@ -79,12 +79,13 @@ namespace prb {
     Texture::Texture() {}
 
     Texture::Texture(std::wstring const& path) {
-        this->path = path;
+        std::wstring ppath = strup::fallbackPath(path);
+        this->path = ppath;
 
-        unsigned char* data = SOIL_load_image(deb::toutf8(path).c_str(), &width, &height, &channels, SOIL_LOAD_RGBA);
+        unsigned char* data = SOIL_load_image(deb::toutf8(ppath).c_str(), &width, &height, &channels, SOIL_LOAD_RGBA);
 
         if (data) defInit(data);
-        else deb::pr("could not load texture '", path, "'\n('", deb::toutf8(path).c_str(),"')\n");
+        else deb::pr("could not load texture '", ppath, "'\n('", deb::toutf8(ppath).c_str(),"')\n");
 
         delete[] data;
     }
