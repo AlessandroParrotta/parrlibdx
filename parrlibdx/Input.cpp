@@ -12,7 +12,6 @@
 
 namespace prb {
 	namespace input {
-		void processInput(HWND* window);
 
 		HWND windowHwnd;
 
@@ -28,7 +27,7 @@ namespace prb {
 		bool keys[KEYS_LENGTH];
 
 		bool oldMouse[MOUSE_LENGTH];
-		bool mouse[MOUSE_LENGTH];
+		bool vmouse[MOUSE_LENGTH];
 
 		std::vector<unsigned int> textKeys;
 
@@ -56,7 +55,7 @@ namespace prb {
 			}
 
 			for (int i = 0; i < MOUSE_LENGTH; i++) {
-				mouse[i] = false;
+				vmouse[i] = false;
 				oldMouse[i] = keys[i];
 			}
 		}
@@ -72,11 +71,30 @@ namespace prb {
 					keys[i] = GetAsyncKeyState(i);
 				}
 
-				mouse[0] = GetKeyState(VK_LBUTTON) < 0;
-				mouse[1] = GetKeyState(VK_RBUTTON) < 0;
-				mouse[2] = GetKeyState(VK_MBUTTON) < 0;
-				mouse[3] = GetKeyState(VK_XBUTTON1) < 0;
-				mouse[4] = GetKeyState(VK_XBUTTON2) < 0;
+				vmouse[0] = GetKeyState(VK_LBUTTON) < 0;
+				vmouse[1] = GetKeyState(VK_RBUTTON) < 0;
+				vmouse[2] = GetKeyState(VK_MBUTTON) < 0;
+				vmouse[3] = GetKeyState(VK_XBUTTON1) < 0;
+				vmouse[4] = GetKeyState(VK_XBUTTON2) < 0;
+
+				POINT p;
+				GetCursorPos(&p);
+
+				RECT rec;
+				GetWindowRect(windowHwnd, &rec);
+
+				//RECT crec;
+				//GetClientRect(windowHwnd, &crec);
+
+				rawMousePos = { (float)p.x - (float)rec.left - 8, (float)p.y - (float)rec.top - 31 };
+
+				mousePos = getRawMousePos();
+				mouseDelta = mousePos - oldMousePos;
+				oldMousePos = mousePos;
+
+				//if (textKeys.size() > 0) {
+				//	textKeys.clear();
+				//}
 			}
 			else {
 				for (int i = 0; i < KEYS_LENGTH; i++) if (keys[i]) keys[i] = false;
@@ -84,30 +102,11 @@ namespace prb {
 
 			//for (int i = 0; i < MOUSE_LENGTH; i++) {
 			//	if (glfwGetMouseButton(window, i) == GLFW_PRESS) {
-			//		mouse[i] = true;
+			//		vmouse[i] = true;
 			//	}
 			//	else {
-			//		mouse[i] = false;
+			//		vmouse[i] = false;
 			//	}
-			//}
-
-			POINT p;
-			GetCursorPos(&p);
-
-			RECT rec;
-			GetWindowRect(windowHwnd, &rec);
-
-			//RECT crec;
-			//GetClientRect(windowHwnd, &crec);
-
-			rawMousePos = { (float)p.x - (float)rec.left - 8, (float)p.y - (float)rec.top - 31 };
-
-			mouseDelta = mousePos - oldMousePos;
-			mousePos = getRawMousePos();
-			oldMousePos = mousePos;
-
-			//if (textKeys.size() > 0) {
-			//	textKeys.clear();
 			//}
 		}
 
@@ -146,7 +145,7 @@ namespace prb {
 
 		void update() {
 			for (int i = 0; i < KEYS_LENGTH; i++) oldKeys[i] = keys[i];
-			for (int i = 0; i < MOUSE_LENGTH; i++) oldMouse[i] = mouse[i];
+			for (int i = 0; i < MOUSE_LENGTH; i++) oldMouse[i] = vmouse[i];
 			
 			scrollWheel = 0;
 
@@ -445,16 +444,23 @@ namespace prb {
 			return getAnyKeyUp(INPUT_LAYER_DEFAULT);
 		}
 
+
+		bool getAnyInput() {
+			bool key = getAnyKey() != -1;
+			for (int i=0; i < MOUSE_LENGTH && !key; i++) key = getMouse(i);
+			return key;
+		}
+
 		bool getMouse(int button, unsigned long layer) {
-			return (layer == 0 || isLayerActive(layer)) && mouse[button];
+			return (layer == 0 || isLayerActive(layer)) && vmouse[button];
 		}
 
 		bool getMouseDown(int button, unsigned long layer) {
-			return (layer == 0 || isLayerActive(layer)) && mouse[button] && !oldMouse[button];
+			return (layer == 0 || isLayerActive(layer)) && vmouse[button] && !oldMouse[button];
 		}
 
 		bool getMouseUp(int button, unsigned long layer) {
-			return (layer == 0 || isLayerActive(layer)) && !mouse[button] && oldMouse[button];
+			return (layer == 0 || isLayerActive(layer)) && !vmouse[button] && oldMouse[button];
 		}
 
 		int getMouseScrollWheel(unsigned long layer) {
@@ -503,12 +509,19 @@ namespace prb {
 			return result;
 		}
 
+		bool leftMouse() { return getMouse(0); }
+		bool rightMouse() { return getMouse(1); }
+		bool middleMouse() { return getMouse(2); }
+		bool mouse() { return getMouse(0); }
+
 		bool leftClick() { return getMouseUp(0); }
 		bool rightClick() { return getMouseUp(1); }
+		bool middleClick() { return getMouseUp(2); }
 		bool click() { return leftClick(); }
 
 		bool leftClickDown() { return getMouseDown(0); }
 		bool rightClickDown() { return getMouseDown(1); }
+		bool middleClickDown() { return getMouseDown(2); }
 		bool clickDown() { return getMouseDown(0); }
 
 		int getMouseScrollWheel(std::vector<unsigned long> layers) {
@@ -554,7 +567,7 @@ namespace prb {
 
 		Vector2f getMousePosNdc() {
 			if (getCursorInputMode() == MOUSE_LOCKED) return disabledMousePos;
-			else return (mousePos / prc::wres() * 2.f - 1.f).ny();
+			else return (mousePos / prc::res() * 2.f - 1.f).ny();
 		}
 
 		vec2 getMousePos() { return util::getAspectOrtho().inverted() * (!prc::inApp ? 1.f : pmat3::getNdc(prc::sbb)) * getMousePosNdc(); }
@@ -649,7 +662,7 @@ namespace prb {
 		}*/
 
 		Vector2f getMouseDeltaConst() {
-			return mouseDelta / vec2(1920.f, 1080.f) * 60.f; //180.f/3.f, about 180deg in 20cm in a 1920x1080 screen with default windows mouse settings, feels right to me
+			return mouseDelta / vec2(1920.f, 1080.f) * 60.f; //180.f/3.f, about 180deg in 20cm in a 1920x1080 screen with default windows vmouse settings, feels right to me
 		}
 
 		Vector2f getMouseDelta() {
@@ -685,12 +698,12 @@ namespace prb {
 		}
 
 		bool getMouseInQuadDefault(Vector2f quadPos, Vector2f quadSize) {
-			//Vector2f mouse = getMouseCoords();
-			//Vector2f mouse = getMouseOrtho();
-			Vector2f mouse = getMousePos();
+			//Vector2f vmouse = getMouseCoords();
+			//Vector2f vmouse = getMouseOrtho();
+			Vector2f vmouse = getMousePos();
 
-			return mouse.x >= quadPos.x && mouse.x <= quadPos.x + quadSize.x &&
-				mouse.y >= quadPos.y && mouse.y <= quadPos.y + quadSize.y;
+			return vmouse.x >= quadPos.x && vmouse.x <= quadPos.x + quadSize.x &&
+				vmouse.y >= quadPos.y && vmouse.y <= quadPos.y + quadSize.y;
 		}
 
 		bool getMouseInQuad(Vector2f quadPos, Vector2f quadSize, int tag) {

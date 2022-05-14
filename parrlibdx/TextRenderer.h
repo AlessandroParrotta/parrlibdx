@@ -150,14 +150,17 @@ namespace prb {
 		aabb2 getAABBReal(std::wstring const& str, std::string const& font, vec2 const& off, mat3 const& transform);
 		aabb2 getAABBReal(std::wstring const& str, mat3 const& transform);
 		aabb2 getAABBReal(mat3 const& transform);
+		template<typename... Args> aabb2 getAABBReal(mat3 const& transform, Args... args) { return getAABBReal(stru::composew(args...), transform); }
 
 		aabb2 getAABB(std::wstring const& str, mat3 const& transform);
 		aabb2 getAABB(mat3 const& transform);
+		template<typename... Args> aabb2 getAABB(mat3 const& transform, Args... args) { return getAABB(stru::composew(args...), transform); }
 
 		aabb2 getAABBpx(std::wstring const& str, std::string const& font, vec2 const& offset, mat3 const& transform);
 		aabb2 getAABBpx(std::wstring const& str, vec2 const& offset, mat3 const& transform);
 		aabb2 getAABBpx(std::wstring const& str, mat3 const& transform);
 		aabb2 getAABBpx(mat3 const& transform);
+		template<typename... Args> aabb2 getAABBpx(mat3 const& transform, Args... args) { return getAABBpx(stru::composew(args...), transform); }
 
 		struct bwstring { std::wstring str; vec2 inoffset; aabb2 bound; };
 		bwstring getWStringBoundedReal(std::wstring const& str, std::string const& font, aabb2 const& bound, vec2 const& offset, std::wstring const& modstr, mat3 const& transform);
@@ -169,6 +172,7 @@ namespace prb {
 
 		void drawText(std::wstring const& str, vec2 const& pos);
 		template<typename... Args> void drawText(vec2 const& pos, Args... args) { std::wstring wstr = stru::composew(args...); drawText(wstr, pos); }
+		template<typename... Args> void drawText(std::function<vec2(aabb2 const&)> fPos, Args... args) { std::wstring wstr = stru::composew(args...); aabb2 bb = getAABBpx(wstr, mat3(1.f)); vec2 pos = fPos(bb); drawText(wstr, pos); }
 
 		void addFont(std::string const& font);
 

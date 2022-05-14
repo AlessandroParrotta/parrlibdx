@@ -143,7 +143,7 @@ namespace prb {
             UINT sampleMask = 0xffffffff;
             devcon->OMSetBlendState(g_pBlendStateNoBlend, NULL, sampleMask);
             
-            input::processInput();
+            //input::processInput();
 
             if (input::getKeyDown(VK_F1)) {
                 debugmenu::enabled = !debugmenu::enabled;
@@ -651,6 +651,10 @@ namespace prb {
                     }
                 }
 
+                input::processInput();
+
+                funcs[FPREUPDATE]();
+
                 if (skipFrameb) {
                     deltaLater = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<uint64_t, std::nano> timeDiff = deltaLater - deltaNow;
@@ -684,8 +688,6 @@ namespace prb {
                 else { deb::rtss.clear(); deb::rtss.str(L""); }
 
                 input::update();
-
-                funcs[FPREUPDATE]();
                 //if (skipFrameb) { skipFrameb = false; return; }
 
                 skipFrameb = false;

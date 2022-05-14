@@ -1,5 +1,6 @@
 Texture2D shaderTexture : register(t0); //slot 0
 SamplerState SampleType;
+//SamplerState SampleType : register(s0); //slot 0
 
 // Per-pixel color data passed through the pixel shader.
 struct PixelShaderInput

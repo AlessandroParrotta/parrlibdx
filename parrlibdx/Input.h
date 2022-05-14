@@ -67,6 +67,8 @@ namespace prb {
 		int getAnyKey();
 		int getAnyKeyUp();
 
+		bool getAnyInput();
+
 		std::vector<int> getPressedKeys();
 		std::vector<int> getPressedKeysDown();
 		std::vector<int> getPressedKeysUp();
@@ -100,11 +102,18 @@ namespace prb {
 		void setMouseStatus(int status);
 		int getMouseStatus();
 
+		bool leftMouse();
+		bool rightMouse();
+		bool middleMouse();
+		bool mouse();
+
 		bool leftClick();	//alias for input::getMouseUp(0)
+		bool middleClick(); //alias for input::getMouseUp(2)
 		bool rightClick();	//alias for input::getMouseUp(1)
 		bool click();		//alias for input::getMouseUp(0)
 
 		bool leftClickDown();	//alias for input::getMouseDown(0)
+		bool middleClickDown(); //alias for input::getMouseDown(2)
 		bool rightClickDown();	//alias for input::getMouseDown(1)
 		bool clickDown();		//alias for input::getMouseDown(0)
 

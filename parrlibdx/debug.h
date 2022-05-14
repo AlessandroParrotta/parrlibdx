@@ -68,6 +68,7 @@ namespace prb {
 
 				return *this;
 			}
+			uss& operator<< (std::string const& val) { return *this << val.c_str(); }
 		};
 
 		extern uss ss;
