@@ -129,6 +129,7 @@ namespace prb {
 			imui::setPos(util::getResbbNDCAspect()[1] + imui::state.size.ny() / 2.f);
 			imui::state.offset = imui::state.size;
 
+			util::setColor(vc4::white);
 			if (imui::button(L"Video"))		page = 0;
 			if (imui::button(L"Input"))		page = 1;
 			if (imui::button(L"Debug"))		page = 2;

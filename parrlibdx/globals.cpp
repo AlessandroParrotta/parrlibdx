@@ -6,10 +6,11 @@ namespace prb {
 	namespace globals {
 		std::unordered_map<std::string, TextRenderer> txrs;
 		bool findTxr(std::string const& name) { return txrs.find(name) != txrs.end(); }
-		void txr(std::string const& name, std::vector<std::string> const& fonts, int const& fontSize){ txrs[name] = { fonts, fontSize }; }
-		void txr(std::string const& name, std::string const& fontName, int const& fontSize) { txrs[name] = { { fontName }, fontSize }; }
+		void txr(std::string const& name, std::vector<std::string> const& fonts, int const& fontSize) { txrs[name] = { fonts, fontSize }; }
+		void txr(std::string const& name, std::string const& font, int const& fontSize) { txr(name, std::vector<std::string>{ font }, fontSize); }
+		void txr(std::string const& name, int const& fontSize) { txr(name, "assets/fonts/segoeui.ttf", fontSize); }
 		TextRenderer& txr(std::string const& name) {
-			if (txrs.find(name) == txrs.end()) txr(name, "assets/fonts/segoeui.ttf", 24);
+			if (txrs.find(name) == txrs.end()) txr(name, 24);
 			return txrs[name];
 		}
 

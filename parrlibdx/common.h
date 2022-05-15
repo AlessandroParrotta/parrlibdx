@@ -13,6 +13,13 @@
 namespace prb {
 	class Shader;
 
+	enum TEXTURE_FILTERING {
+		NEAREST,
+		LINEAR
+	};
+	D3D11_FILTER getFromFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip);
+	std::tuple<TEXTURE_FILTERING, TEXTURE_FILTERING, TEXTURE_FILTERING> calcMinMagMip(D3D11_FILTER filter);
+
 	void ThrowIfFailed(HRESULT hr);
 
 	// global declarations

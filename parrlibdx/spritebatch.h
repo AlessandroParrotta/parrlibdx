@@ -1,6 +1,6 @@
 #pragma once
 
-#include "texture.h"
+#include "Texture.h"
 #include "vertexbuffer.h"
 
 #include "Sprite.h"

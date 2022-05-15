@@ -159,6 +159,7 @@ namespace prb {
 		FlowTexture t(newSize);
 		//deb::out("resize ", getSize(), " -> ", newSize, "\n");
 		t.fillRegion(data, 0.f, getSize());
+		t.setFiltering(filtering);
 		dispose();
 		*this = t;
 	}

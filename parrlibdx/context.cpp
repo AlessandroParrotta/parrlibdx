@@ -370,6 +370,7 @@ namespace prb {
 
         void resize(vec2 size) {
             if (!swapchain) return;
+            if (cst::res() == size) return;
             RECT wrect; GetWindowRect(windowHwnd, &wrect);
             wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
@@ -469,7 +470,13 @@ namespace prb {
             //}
             case WM_CHAR:
             {
+                if (
+                    (int)wParam == VK_BACK ||
+                    (int)wParam == VK_RETURN
+                ) break;
+
                 input::textKeys.push_back((int)wParam);
+                deb::out("text key: ", (int)wParam, " ", (wchar_t)wParam, "\n");
                 break;
             }
             }

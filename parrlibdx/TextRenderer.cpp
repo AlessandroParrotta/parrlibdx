@@ -1,9 +1,7 @@
 #include "TextRenderer.h"
 
-#include <parrlibcore\tick.h>
-
-#include "util.h"
 #include "debug.h"
+#include "util.h"
 
 namespace prb {
 TextRenderer::TextRenderer() {
@@ -39,8 +37,10 @@ TextRenderer::TextRenderer(std::vector<std::string> const& fontNames, int const&
 	this->fontSize = fontSize;
 	//modifier = util::getAspectOrtho();
 
-	//atlas.tex.setFiltering(minFilter, magFilter);
+	atlas.tex.setFiltering(minFilter, magFilter);
+	//atlas.tex.setFiltering(D3D11_FILTER_MIN_MAG_MIP_LINEAR);
 
+	//sh = Shader("assets/shaders/textRender.vert", "assets/shaders/textRender.frag");
 	sh = { "assets/shaders/textRenderv.cso", "assets/shaders/textRenderp.cso",
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0,			0,								D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -50,7 +50,7 @@ TextRenderer::TextRenderer(std::vector<std::string> const& fontNames, int const&
 	};
 
 	//vao = { { {{}, 4}, {{}, 4 } } }; //4 cause xy = pos, zw = texCoord, 4 color
-	vao = vbuf(vertBatch{ 0.f }, 8*sizeof(float), 0); //4 cause xy = pos, zw = texCoord, 4 color
+	vao = { vertBatch{ 0.f }, 8 * sizeof(float), 0 }; //4 cause xy = pos, zw = texCoord, 4 color
 
 	if (FT_Init_FreeType(&library)) {
 		fprintf(stderr, "\nError: Could not load FreeType library.");
@@ -76,28 +76,30 @@ void TextRenderer::updateAndResizeAtlas(Atlas& at, vec2 gSize) {
 
 	if (at.tex.null()) {
 		if (gSize.x == 0.f || gSize.y == 0.f) gSize = 1.f;
-		at.tex = FlowTexture(vec2(gSize.x, gSize.y + border.y), gSize.x, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, D3D10_1_SRV_DIMENSION_TEXTURE2D);
+		//at.tex = Texture(vec2(gSize.x, gSize.y + border.y), GL_RED, GL_RED, GL_UNSIGNED_BYTE);
+		at.tex = FlowTexture(vec2(gSize.x, gSize.y + border.y));
 		//at.atlas.setFiltering(GL_NEAREST, GL_NEAREST);
-		//at.tex.setFiltering(minFilter, magFilter);
+		at.tex.setFiltering(minFilter, magFilter);
+		//atlas.tex.setFiltering(D3D11_FILTER_MIN_MAG_MIP_LINEAR);
 		at.atlasCur.x = border.x + 0.f;
 		at.atlasCur.y = border.y + 0.f;
 		at.tex.setData(vec4(0.f));
 	}
 
-	while (at.atlasCurLine.x > at.tex.getSize().x - border.x && at.atlasCurLine.x < maxAtlasSize.x - border.x) {
-		if (at.tex.getSize().x == 0.f) at.tex.resize(at.tex.getSize() + vec2(1.f, 0.f));
-		at.tex.resize(vec2(std::fmin(at.tex.getSize().x * 2, maxAtlasSize.x), at.tex.getSize().y));
+	while (at.atlasCurLine.x > at.tex.size().x - border.x && at.atlasCurLine.x < maxAtlasSize.x - border.x) {
+		if (at.tex.size().x == 0.f) at.tex.resize(at.tex.getSize() + vec2(1.f, 0.f));
+		at.tex.resize(vec2(std::fmin(at.tex.size().x * 2, maxAtlasSize.x), at.tex.size().y));
 	}
 
 	if (at.atlasCurLine.x > maxAtlasSize.x - border.x) {
-		at.tex.resize(at.tex.getSize() + vec2(0.f, gSize.y + spacing.y));
+		at.tex.resize(at.tex.size() + vec2(0.f, gSize.y + spacing.y));
 		at.atlasCur.x = border.x + 0.f;
 		at.atlasCur.y += at.atlasCurMax.y + spacing.y;
 		at.atlasCurMax = 0.f;
 	}
 
-	if (at.atlasCurLine.y > at.tex.getSize().y - border.y) {
-		at.tex.resize(vec2(at.tex.getSize().x, at.atlasCurLine.y + border.y));
+	if (at.atlasCurLine.y > at.tex.size().y - border.y) {
+		at.tex.resize(vec2(at.tex.size().x, at.atlasCurLine.y + border.y));
 	}
 }
 
@@ -167,7 +169,7 @@ void TextRenderer::loadGlyph(std::string const& font, unsigned long id) {
 		//skip ' ' character, generates an error if it's the first element to be loaded into the atlas
 		if ((wchar_t)id != L' ') {
 			unsigned char* buf = new unsigned char[bitmap.width * bitmap.rows * 4];
-				
+
 				for (int y = 0; y < bitmap.rows; y++) {
 					for (int x = 0; x < bitmap.width; x++) {
 						int idx = y * bitmap.width + x;
@@ -251,11 +253,11 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 			vec2 size = 2.f, txmax;
 
 			glyph& g = ginfot->at(c);
-			pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
-			size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
+			pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == LINEAR ? txBias : 0);
+			size = vec2(g.bitw, g.bitr) + (minFilter == LINEAR ? txBias : 0) * 2.f;
 
-			txmin = g.txmin - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
-			txmax = g.txmax + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
+			txmin = g.txmin - (minFilter == LINEAR ? txBias : 0);
+			txmax = g.txmax + (magFilter == LINEAR ? txBias : 0);
 
 			cur += vec2(g.advx, g.advy);
 
@@ -284,7 +286,7 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 			//dataColor[ccount++] = color.x; dataColor[ccount++] = color.y; dataColor[ccount++] = color.z; dataColor[ccount++] = color.w;
 			//dataColor[ccount++] = color.x; dataColor[ccount++] = color.y; dataColor[ccount++] = color.z; dataColor[ccount++] = color.w;
 			//dataColor[ccount++] = color.x; dataColor[ccount++] = color.y; dataColor[ccount++] = color.z; dataColor[ccount++] = color.w;
-			
+
 			//v0 *= .01f;
 			//v1 *= .01f;
 			//v2 *= .01f;
@@ -293,10 +295,10 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 			// TRIANGLE 1
 			data[dcount++] = v0.x;		data[dcount++] = v0.y;		data[dcount++] = tx0.x;		data[dcount++] = tx0.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
-			
+
 			data[dcount++] = v1.x;		data[dcount++] = v1.y;		data[dcount++] = tx1.x;		data[dcount++] = tx1.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
-			
+
 			data[dcount++] = v2.x;		data[dcount++] = v2.y;		data[dcount++] = tx2.x;		data[dcount++] = tx2.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
 
@@ -304,10 +306,10 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 			// TRIANGLE 2
 			data[dcount++] = v2.x;		data[dcount++] = v2.y;		data[dcount++] = tx2.x;		data[dcount++] = tx2.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
-			
+
 			data[dcount++] = v3.x;		data[dcount++] = v3.y;		data[dcount++] = tx3.x;		data[dcount++] = tx3.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
-			
+
 			data[dcount++] = v0.x;		data[dcount++] = v0.y;		data[dcount++] = tx0.x;		data[dcount++] = tx0.y;
 			data[dcount++] = color.x;	data[dcount++] = color.y;	data[dcount++] = color.z;	data[dcount++] = color.w;
 
@@ -336,44 +338,29 @@ TextRenderer::DrawRes TextRenderer::drawWStringPriv(std::wstring const& str, std
 	//vao.vbos[0].setData(data, dcount);
 	//vao.vbos[1].setData(dataColor, ccount);
 
-	//for (int i = 0; i < data.size(); i += 8) {
-	//	deb::out("vert: ",
-	//		vec2(data[i + 0], data[i + 1]), ", ",
-	//		vec2(data[i + 2], data[i + 3]), ", ",
-	//		vec4(data[i + 4], data[i + 5], data[i + 6], data[i + 7]),
-	//		"\n"
-	//	);
-	//}
-
-	vao.setData(data, dcount);
-
-	//vertBatch tres; tres.insert(tres.begin(), data.begin(), data.begin() + dcount);
-	//vao.setData(tres);
-
 	//util::texEnable();
 	//bool blenden = util::blendEnabled(); if(!blenden) util::blendEnable();
-	sh.use();
+	//sh.use();
 	//sh.setUniform("transform", util::getTopMatrix() * transform * pmat3::translate(targetbb.center() - bb.center()));
-	sh.setUniform("transform", transform * pmat3::translate(targetbb.center() - bb.center()));
-	//sh.setUniform("transform", pmat3::translate(-vec2x(.4f)));
-	//deb::out(tick::time, "\n");
-	//sh.setUniform("transform", util::getMaxAspectOrtho().inverted() * pmat3::translate(pmat3::rotate(tick::time*50.f) * vec2(.5f, 0.f)) * pmat3::scale(.01f) * pmat3::rotate(tick::time*100.f));
-	//sh.setUniform("transform", mat3(1.f));
-	
-	//mat3 retrieved = sh.get<mat3>("transform");
-	//deb::out(retrieved, "\n");
-
 	//sh.setUniform("tex", 0);
-	//deb::out("atlasSize ", atlas.tex.getSize(), "\n");
-	sh.setUniform("atlasSize", atlas.tex.getSize());
-	util::bindTexture(atlas.tex.resView, atlas.tex.sampler);
+	//sh.setUniform("atlasSize", atlas.tex.size);
+	//util::bindTexture(0, atlas.tex.texID);
 
-	vao.draw();
-	sh.release();
+	//vao.draw();
+	//sh.release();
 	//if (!blenden) util::blendDisable();
 	//util::texDisable();
 
-	//vao.setData({ 0.f });
+	vao.setData(data, dcount);
+
+	sh.use();
+		sh.setUniform("transform", util::getTopMatrix()* transform* pmat3::translate(targetbb.center() - bb.center()));
+		sh.setUniform("atlasSize", atlas.tex.getSize());
+
+		util::bindTexture(atlas.tex.resView, atlas.tex.sampler);
+
+		vao.draw();
+	sh.release();
 
 	return { count, cur };
 }
@@ -396,8 +383,11 @@ void TextRenderer::drawString(std::string const& str, mat3 const& transform) { d
 void TextRenderer::drawString(std::string const& str, vec2 pos) { drawWString(stringutils::toWString(str), pmat3::translate(pos)); }
 
 void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& font, vec2 const& offset, mat3 const& transform) {
-	int oldMag = magFilter, oldMin = minFilter;
-	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(D3DX11_FILTER_POINT, D3DX11_FILTER_POINT);
+	//GLint oldMag = magFilter, oldMin = minFilter;
+	//if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(GL_NEAREST, GL_NEAREST);
+
+	//TEXTURE_FILTERING oldMag = magFilter, oldMin = minFilter;
+	//if (oldMag != NEAREST || oldMin != NEAREST) setFiltering(NEAREST, NEAREST);
 
 	//aabb2 bb = getAABBReal(str, font, 0.f, 1.f);
 
@@ -412,10 +402,10 @@ void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& fon
 	//mat3 retranslate = pmat3::translate(-bbpx.size() / 2 + (bbpx.size() / 2) * offset) * pmat3::scale(bbpx.size()/bb.size()) * pmat3::translate(0.01f);
 
 	//drawWStringReal(str, font, 0.f, transform * retranslate);
-	//drawWStringReal(str, font, offset, transform * util::getAspectOrtho().inverted() * pmat3::toNdc({0.f, cst::res()}) * pmat3::translate(cst::res()/2.f) * pmat3::translate(0.01f));
-	drawWStringReal(str, font, offset, transform * pmat3::toNdc({0.f, cst::res()}) * pmat3::translate(cst::res()/2.f) * pmat3::translate(0.01f));
+	drawWStringReal(str, font, offset, transform * util::getAspectOrtho().inverted() * pmat3::toNdc({0.f, cst::res()}) * pmat3::translate(cst::res()/2.f) * pmat3::translate(0.01f));
 
-	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(oldMin, oldMag);
+	//if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(oldMin, oldMag);
+	//if (oldMag != NEAREST || oldMin != NEAREST) setFiltering(oldMin, oldMag);
 }
 void TextRenderer::drawWStringpx(std::wstring const& str, std::string const& font, mat3 const& transform) { drawWStringpx(str, font, 0.f, transform); }
 void TextRenderer::drawWStringpx(std::wstring const& str, vec2 const& offset, mat3 const& transform) { drawWStringpx(str, fontName, offset, transform); }
@@ -457,6 +447,8 @@ void TextRenderer::drawWStringpx(std::string const& font, vec2 const& offset, aa
 	drawWStringpx(str, font, offset, bound, transform);
 }
 
+void TextRenderer::drawText(std::wstring const& str, vec2 const& pos) { drawWStringpx(str, vec2(1.f), pmat3::translate(pos)); }
+
 aabb2 TextRenderer::getAABBReal(std::wstring const& str, std::string const& font, vec2 const& off, mat3 const& transform) {
 	std::string tfont = font;
 
@@ -473,8 +465,8 @@ aabb2 TextRenderer::getAABBReal(std::wstring const& str, std::string const& font
 		else				gInfo = &fonts[cfont].gInfo;
 
 		glyph& g = (*gInfo)[c];
-		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
-		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
+		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == LINEAR ? txBias : 0);
+		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == LINEAR ? txBias : 0) * 2.f;
 		cur += vec2(g.advx, g.advy);
 
 		if (bb.fmin() == 0.f && bb.fmax() == 0.f) {
@@ -506,8 +498,11 @@ aabb2 TextRenderer::getAABB(std::wstring const& str, mat3 const& transform = 1.f
 aabb2 TextRenderer::getAABB(mat3 const& transform = 1.f) { return getAABB(wostr.str()); }
 
 aabb2 TextRenderer::getAABBpx(std::wstring const& str, std::string const& font, vec2 const& offset, mat3 const& transform = 1.f) {
-	int oldMag = magFilter, oldMin = minFilter;
-	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(D3DX11_FILTER_POINT, D3DX11_FILTER_POINT);
+	//GLint oldMag = magFilter, oldMin = minFilter;
+	//if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(GL_NEAREST, GL_NEAREST);
+	
+	//TEXTURE_FILTERING oldMag = magFilter, oldMin = minFilter;
+	//if (oldMag != NEAREST || oldMin != NEAREST) setFiltering(NEAREST, NEAREST);
 
 	aabb2 bb = getAABBReal(str, font, offset, 1.f);
 
@@ -524,11 +519,11 @@ aabb2 TextRenderer::getAABBpx(std::wstring const& str, std::string const& font, 
 
 	//mat3 mul = transform * retranslate;
 
-	if (oldMag != D3DX11_FILTER_POINT || oldMin != D3DX11_FILTER_POINT) setFiltering(oldMin, oldMag);
+	//if (oldMag != GL_NEAREST || oldMin != GL_NEAREST) setFiltering(oldMin, oldMag);
+	//if (oldMag != NEAREST || oldMin != NEAREST) setFiltering(oldMin, oldMag);
 
 	//return mul * bb;
-	//return (transform * util::getAspectOrtho()* pmat3::toNdc({ 0.f, cst::res() }) * pmat3::translate(cst::res() / 2.f) * pmat3::translate(0.01f)) * bb;
-	return (transform * pmat3::toNdc({ 0.f, cst::res() }) * pmat3::translate(cst::res() / 2.f) * pmat3::translate(0.01f)) * bb;
+	return (transform * util::getAspectOrtho().inverted()* pmat3::toNdc({ 0.f, cst::res() }) * pmat3::translate(cst::res() / 2.f) * pmat3::translate(0.01f)) * bb;
 }
 aabb2 TextRenderer::getAABBpx(std::wstring const& str, vec2 const& offset, mat3 const& transform = 1.f) { return getAABBpx(str, fontName, offset, transform); }
 aabb2 TextRenderer::getAABBpx(std::wstring const& str, mat3 const& transform = 1.f) { return getAABBpx(str, fontName, 0.f, transform); }
@@ -593,8 +588,8 @@ TextRenderer::bwstring TextRenderer::getWStringBoundedReal(std::wstring const& s
 		else				gInfo = &fonts[cfont].gInfo;
 
 		glyph& g = (*gInfo)[c];
-		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f);
-		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == D3DX11_FILTER_LINEAR ? txBias : 0.f) * 2.f;
+		vec2 pos = cur + vec2(g.bitl, -(g.bitr - g.bitt)) - (minFilter == LINEAR ? txBias : 0);
+		vec2 size = vec2(g.bitw, g.bitr) + (minFilter == LINEAR ? txBias : 0) * 2.f;
 		cur += vec2(g.advx, g.advy);
 
 		if (cur.x + modbb.size().x > bound.size().x) { resstr = resstr.substr(0, i); break; }
@@ -648,8 +643,6 @@ TextRenderer::bwstring TextRenderer::getWStringBoundedpx(std::wstring const& str
 TextRenderer::bwstring TextRenderer::getWStringBoundedpx(std::wstring const& str, aabb2 const& bound, vec2 const& offset, mat3 const& transform) { return getWStringBoundedpx(str, fontName, bound, offset, L"...", transform); }
 TextRenderer::bwstring TextRenderer::getWStringBoundedpx(std::wstring const& str, aabb2 const& bound, mat3 const& transform) { return getWStringBoundedpx(str, fontName, bound, vec2(0.f), L"...", transform); }
 
-void TextRenderer::drawText(std::wstring const& str, vec2 const& pos) { drawWStringpx(str, vec2(1.f), pmat3::translate(pos)); }
-
 void TextRenderer::setFontSize(int fontSize) {
 	this->fontSize = fontSize;
 	for (auto& f : fonts) FT_Set_Pixel_Sizes(f.second.face, 0, fontSize);
@@ -686,18 +679,12 @@ vec4 TextRenderer::color()								{ return vcolor; }
 void TextRenderer::outlineColor(vec4 outlineColor)		{ voutlineColor = outlineColor; }
 vec4 TextRenderer::outlineColor()						{ return voutlineColor; }
 
-void TextRenderer::setFiltering(int min, int mag) {
-	minFilter = min;
-	magFilter = mag;
-	//for (auto& f : fonts) {
-	//	//std::cout << f.first << " setting filter " << util::glIntToString(min) << " " << util::glIntToString(mag) << "\n";
-	//	f.second.atlas.atlas.setFiltering(min, mag);
-	//	f.second.outlineAtlas.atlas.setFiltering(min, mag);
-	//}
-	//atlas.tex.setFiltering(min, mag);
+void TextRenderer::setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag) {
+	this->minFilter = min; this->magFilter = mag;
+	atlas.tex.setFiltering(min, mag);
 }
-int TextRenderer::getMagFilter() { return magFilter; }
-int TextRenderer::getMinFilter() { return minFilter; }
+TEXTURE_FILTERING TextRenderer::getMagFilter() { return minFilter; }
+TEXTURE_FILTERING TextRenderer::getMinFilter() { return magFilter; }
 
 //Texture TextRenderer::getOutlineAtlas(std::string const& font) { return fonts[font].outlineAtlas.atlas; }
 Texture TextRenderer::getAtlas() { return atlas.tex; }

@@ -63,25 +63,30 @@ namespace prb {
 		mat3 getAspectOrthoY();
 		mat3 getMinAspectOrtho();
 		mat3 getMaxAspectOrtho();
-		mat3 getAspectOrtho(); 
-		
+		mat3 getAspectOrtho();
+
 		mat3 getAspectOrthoXInv();
+		mat3 getAspectOrthoYInv();
 		mat3 getMinAspectOrthoInv();
 		mat3 getMaxAspectOrthoInv();
 		mat3 getAspectOrthoInv();
-
-		aabb2 getScreenBoundingBox();
 
 		mat3 fromNdc();
 		mat3 toNdc();
 
 		mat3 fromNdcAspect();
 		mat3 toNdcAspect();
-
 		mat3 fromNdcAspectInv();
 		mat3 toNdcAspectInv();
 
 		aabb2 getResbbNDCAspect();
+
+		float getScreenLeft();
+		float getScreenRight();
+		float getScreenTop();
+		float getScreenBottom();
+
+		vec2 getPixel();
 
 		void translate(vec2 v);
 		void rotate(float angle);
@@ -151,8 +156,13 @@ namespace prb {
 		void drawTexture(std::wstring const& path, const mat3 mat, aabb2 const& uv);
 		void drawTexture(std::wstring const& path, const mat3 mat = 1.f);
 
+		void bindTexture(UINT slot, ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler);
 		void bindTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler);
+		
+		void bindTexture(UINT slot, Texture const& tex);
 		void bindTexture(Texture const& tex);
+
+		void bindTextures(std::vector<Texture> const& textures, UINT const& slotOffset = 0);
 
 		void drawTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler, const mat3 mat = 1.f);
 		void drawTexture(Texture const& t, const mat3 mat = 1.f);
@@ -160,7 +170,6 @@ namespace prb {
 
 		void drawSubTex(Texture const& tex, vec2 const& txmin, vec2 const& txmax, mat3 const& transform);
 		void drawSubTex(Texture const& tex, aabb2 const& coord, aabb2 const& tx, mat3 const& transform);
-
 
 		extern outl::uniss text;
 		void drawText(std::string const& font, int const& fontSize, mat3 const& transform);
@@ -171,6 +180,15 @@ namespace prb {
 
 		template<typename... Args> inline void drawText(int const& fontSize, mat3 const& transform, Args... args) { text << stru::composew(args...); drawText("assets/fonts/segoeui.ttf", fontSize, transform); }
 		template<typename... Args> inline void drawText(int const& fontSize, vec2 const& pos, Args... args) { text << stru::composew(args...); drawText(fontSize, pmat3::translate(pos)); }
+	
+		aabb2 getTextBound(std::string const& font, int const& fontSize, mat3 const& transform);
+		aabb2 getTextBound(int const& fontSize, mat3 const& transform);
+		aabb2 getTextBound(int const& fontSize, vec2 const& pos);
+		aabb2 getTextBound(mat3 const& transform);
+		aabb2 getTextBound(vec2 const& pos);
+
+		template<typename... Args> inline aabb2 getTextBound(int const& fontSize, mat3 const& transform, Args... args) { text << stru::composew(args...); return getTextBound("assets/fonts/segoeui.ttf", fontSize, transform); }
+		template<typename... Args> inline aabb2 getTextBound(int const& fontSize, vec2 const& pos, Args... args) { text << stru::composew(args...); return getTextBound(fontSize, pmat3::translate(pos)); text.str(L""); }
 	}
 
 	namespace util = Util;

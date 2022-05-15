@@ -28,5 +28,6 @@
 #include "constantbuffer.h"
 #include "vertexbuffer.h"
 #include "framebuffer.h"
+#include "ui/imui.h"
 
 #endif

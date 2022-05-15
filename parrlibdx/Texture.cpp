@@ -51,7 +51,9 @@ namespace prb {
         D3D11_SAMPLER_DESC samplerDesc;
 
         // Create a texture sampler state description.
-        samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        //samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        //samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+        samplerDesc.Filter = filtering;
         samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -145,10 +147,22 @@ namespace prb {
 
     Texture::Texture(vec2 size, int linesize) : Texture(size, linesize, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_SRV_DIMENSION_TEXTURE2D) {}
 
+    bool Texture::operator==(Texture const& ot)  const { 
+        return this->texture == ot.texture && 
+            this->resView == ot.resView && 
+            this->sampler == ot.sampler &&
+
+            this->width == ot.width && 
+            this->height == ot.height &&
+            this->channels == ot.channels &&
+            this->linesize == ot.linesize;
+    }
+    bool Texture::operator!=(Texture const& ot)  const { return !(*this == ot); }
 
     bool Texture::null() const { return !texture || !resView || !sampler; }
 
     vec2 Texture::getSize() const { return { (float)width, (float)height }; }
+    vec2 Texture::size() const { return getSize(); }
 
     void Texture::setData(unsigned char* data, vec2 size, int linesize) {
         if (linesize == width) linesize *= 4;
@@ -202,6 +216,45 @@ namespace prb {
 
         delete[] ndata;
     }
+
+    D3D11_FILTER Texture::getFromFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip) const {
+        return prb::getFromFiltering(min, mag, mip);
+    }
+
+    void Texture::calcMinMagMip(D3D11_FILTER filter) {
+        std::tuple<TEXTURE_FILTERING, TEXTURE_FILTERING, TEXTURE_FILTERING> ret = prb::calcMinMagMip(filter);
+        min = std::get<0>(ret); mag = std::get<1>(ret); mip = std::get<2>(ret);
+    }
+
+    void Texture::setFiltering(D3D11_FILTER filter) { 
+        this->filtering = filter;
+        if (!texture || !resView || !sampler) return;
+
+        calcMinMagMip(filter);
+
+        if (sampler) { sampler->Release();  sampler = NULL; }
+
+        D3D11_SAMPLER_DESC samplerDesc;
+        samplerDesc.Filter = filtering;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.MipLODBias = 0.0f;
+        samplerDesc.MaxAnisotropy = 1;
+        samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+        samplerDesc.BorderColor[0] = 0;
+        samplerDesc.BorderColor[1] = 0;
+        samplerDesc.BorderColor[2] = 0;
+        samplerDesc.BorderColor[3] = 0;
+        samplerDesc.MinLOD = 0;
+        samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+        // Create the texture sampler state.
+        ThrowIfFailed(dev->CreateSamplerState(&samplerDesc, &sampler));
+    }
+    void Texture::setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip) { this->min = min; this->mag = mag; this->mip = mip; setFiltering(getFromFiltering(min, mag, mip));  }
+    void Texture::setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag) { this->min = min; this->mag = mag; mip = mag; setFiltering(getFromFiltering(min, mag, mip)); }
+    void Texture::setFiltering(TEXTURE_FILTERING filter) { min = mag = mip = filter; setFiltering(getFromFiltering(min, mag, mip)); }
 
     void Texture::drawImmediate(std::vector<float> const& verts) const {
         util::drawTexture(*this, verts);

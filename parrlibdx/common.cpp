@@ -4,22 +4,49 @@
 #include "shader.h"
 
 namespace prb {
+    D3D11_FILTER getFromFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip) {
+        if (min == LINEAR && mag == LINEAR && mip == LINEAR) return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        else if (min == LINEAR && mag == LINEAR && mip == NEAREST) return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        else if (min == LINEAR && mag == NEAREST && mip == LINEAR) return D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+        else if (min == LINEAR && mag == NEAREST && mip == NEAREST) return D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+        else if (min == NEAREST && mag == LINEAR && mip == LINEAR) return D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+        else if (min == NEAREST && mag == LINEAR && mip == NEAREST) return D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+        else if (min == NEAREST && mag == NEAREST && mip == LINEAR) return D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+        else if (min == NEAREST && mag == NEAREST && mip == NEAREST) return D3D11_FILTER_MIN_MAG_MIP_POINT;
+
+        return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    }
+
+    std::tuple<TEXTURE_FILTERING, TEXTURE_FILTERING, TEXTURE_FILTERING> calcMinMagMip(D3D11_FILTER filter) {
+        TEXTURE_FILTERING min, mag, mip;
+        if (filter == D3D11_FILTER_MIN_MAG_MIP_LINEAR) { min == LINEAR; mag == LINEAR; mip == LINEAR; }
+        else if (filter == D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT) { min == LINEAR; mag == LINEAR; mip == NEAREST; }
+        else if (filter == D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR) { min == LINEAR; mag == NEAREST; mip == LINEAR; }
+        else if (filter == D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT) { min == LINEAR; mag == NEAREST; mip == NEAREST; }
+        else if (filter == D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR) { min == NEAREST; mag == LINEAR; mip == LINEAR; }
+        else if (filter == D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT) { min == NEAREST; mag == LINEAR; mip == NEAREST; }
+        else if (filter == D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR) { min == NEAREST; mag == NEAREST; mip == LINEAR; }
+        else if (filter == D3D11_FILTER_MIN_MAG_MIP_POINT) { min == NEAREST; mag == NEAREST; mip == NEAREST; }
+        
+        return { min, mag, mip };
+    }
+
     void ThrowIfFailed(HRESULT hr) { if (FAILED(hr)) std::terminate(); }
 
     // global declarations
     HWND windowHwnd;
 
-    IDXGISwapChain* swapchain;             // the pointer to the swap chain interface
-    ID3D11Device* dev;                     // the pointer to our Direct3D device interface
-    ID3D11DeviceContext* devcon;           // the pointer to our Direct3D device context
-    ID3D11RenderTargetView* backbuffer;    // the pointer to our back buffer
+    IDXGISwapChain* swapchain = NULL;             // the pointer to the swap chain interface
+    ID3D11Device* dev = NULL;                     // the pointer to our Direct3D device interface
+    ID3D11DeviceContext* devcon = NULL;           // the pointer to our Direct3D device context
+    ID3D11RenderTargetView* backbuffer = NULL;    // the pointer to our back buffer
     //ID3D11InputLayout* pLayout;            // the pointer to the input layout
     //ID3D11VertexShader* pVS;               // the pointer to the vertex shader
     //ID3D11PixelShader* pPS;                // the pointer to the pixel shader
     Shader defTexShader;
     Shader defShader;
-    ID3D11Buffer* pVBuffer;                // the pointer to the vertex buffer
-    ID3D11BlendState* g_pBlendStateNoBlend;
+    ID3D11Buffer* pVBuffer = NULL;                // the pointer to the vertex buffer
+    ID3D11BlendState* g_pBlendStateNoBlend = NULL;
 
     double deltaTime = 0.;
     double curtime = 0.;

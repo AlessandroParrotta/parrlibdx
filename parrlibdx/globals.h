@@ -13,7 +13,8 @@ namespace prb {
 	namespace globals {
 		bool findTxr(std::string const& name);
 		void txr(std::string const& name, std::vector<std::string> const& fonts, int const& fontSize);
-		void txr(std::string const& name, std::string const& fontName, int const& fontSize);
+		void txr(std::string const& name, std::string const& font, int const& fontSize);
+		void txr(std::string const& name, int const& fontSize);
 		TextRenderer& txr(std::string const& name);
 
 		bool findShader(std::string const& name);

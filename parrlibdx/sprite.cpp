@@ -2,7 +2,7 @@
 
 namespace prb {
 	Sprite::Sprite() {}
-	Sprite::Sprite(Texture const& tex) : tex(tex) { /*this->tex.setFiltering(GL_NEAREST);*/ }
+	Sprite::Sprite(Texture const& tex) : tex(tex) { this->tex.setFiltering(D3D11_FILTER_MIN_MAG_MIP_POINT); }
 	Sprite::Sprite(const char* tex) : Sprite(Texture(tex)) {
 		//try loading an spt file if present (in the same folder of the texture)
 		std::string tTex = strup::fallbackPath(tex);
@@ -15,7 +15,7 @@ namespace prb {
 
 		using namespace outl;
 
-		size = this->tex.getSize();
+		size = this->tex.size();
 
 		std::string word = loadString(f);
 		while (f.good()) {
@@ -92,7 +92,7 @@ namespace prb {
 		//return sa.getAnim().coord*size + size.xo() * sa.curFrame;
 		return vec2(
 			sa.getAnim().coord.x * size.x + size.x * sa.curFrame,
-			tex.getSize().y - size.y - sa.getAnim().coord.y * size.y
+			tex.size().y - size.y - sa.getAnim().coord.y * size.y
 		);
 	}
 
@@ -124,8 +124,8 @@ namespace prb {
 	}
 
 	void Sprite::draw(AnimationPlayer const& ap, mat3 const& transform) const {
-		vec2 off = getOffset(ap) / tex.getSize();
-		util::drawSubTex(tex, off, off + size / tex.getSize(), transform);
+		vec2 off = getOffset(ap) / tex.size();
+		util::drawSubTex(tex, off, off + size / tex.size(), transform);
 	}
 
 	void Sprite::draw(std::string const& statename, mat3 const& transform) const {
@@ -143,7 +143,7 @@ namespace prb {
 		std::array<aabb2, 9> coords;						//actual coordinates
 
 		aabb2 acbb = { 0.f, 2.f };
-		vec2 sctex = 1.f / tex.getSize();
+		vec2 sctex = 1.f / tex.size();
 
 		aabb2 tileVs = ap.getAnim().tiledarea / this->size * 2.f; //tile vertices (vertices of the tiled area)
 
@@ -170,11 +170,11 @@ namespace prb {
 		//for (int i = 0; i < 9; i++) util::drawSubTex(tex.texID, coords[i], offs[i]/tex.size, transform);
 		//for (int i = 0; i < 9; i++) { util::drawQuad(transform * coords[i], GL_LINE_LOOP); }
 
-		util::drawSubTex(tex, coords[4], offs[4] / tex.getSize(), transform);
+		util::drawSubTex(tex, coords[4], offs[4] / tex.size(), transform);
 
 		if (diff.fmin() != 0.f || diff.fmax() != 0.f) {
 			for (int i = 0; i < 9; i++) {
-				if (i != 4) util::drawSubTex(tex, coords[i], offs[i] / tex.getSize(), transform);
+				if (i != 4) util::drawSubTex(tex, coords[i], offs[i] / tex.size(), transform);
 			}
 		}
 

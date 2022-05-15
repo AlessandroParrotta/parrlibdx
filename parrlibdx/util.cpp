@@ -68,6 +68,11 @@ namespace prb {
 		void pushMatrix(const mat3& modifier) { mStack.push_back(mStack.back() * modifier); setCB(mStack.back()); }
 		void pushReset() { mStack.push_back(1.f); setCB(mStack.back()); }
 		void popMatrix() { mStack.pop_back(); setCB(mStack.back()); }
+		mat3 getTopMatrix() { return mStack.back(); }
+		mat3 getTopMatrixAspectInv() { return getAspectOrtho().inverted() * mStack.back(); }
+		mat3 getTopMatrixInvAspect() { return mStack.back().inverted() * getAspectOrtho(); }
+		mat3 getTopMatrixOrthoInverted() { return mStack.back().inverted() * getAspectOrtho(); }
+
 		mat3 getAspectOrthoX() { return pmat3::orthoAspectX(cst::res()); }
 		mat3 getAspectOrthoY() { return pmat3::orthoAspectY(cst::res()); }
 		mat3 getMinAspectOrtho() { return pmat3::orthoMinAspect(cst::res()); }
@@ -80,13 +85,6 @@ namespace prb {
 		mat3 getMaxAspectOrthoInv() { return pmat3::orthoMaxAspectInv(cst::res()); }
 		mat3 getAspectOrthoInv() { return pmat3::orthoMaxAspectInv(cst::res()); }
 
-		mat3 getTopMatrix() { return mStack.back(); }
-		mat3 getTopMatrixAspectInv() { return getAspectOrtho().inverted() * mStack.back(); }
-		mat3 getTopMatrixInvAspect() { return mStack.back().inverted() * getAspectOrtho(); }
-		mat3 getTopMatrixOrthoInverted() { return mStack.back().inverted() * getAspectOrtho(); }
-
-		aabb2 getScreenBoundingBox() { return getTopMatrix().inverted() * aabb2s(2.f); }
-
 		mat3 fromNdc() { return pmat3::fromNdc({ 0.f, cst::res() }); }
 		mat3 toNdc() { return pmat3::toNdc({ 0.f, cst::res() }); }
 
@@ -96,6 +94,13 @@ namespace prb {
 		mat3 toNdcAspectInv() { return getAspectOrtho().inverted() * pmat3::toNdc({ 0.f, cst::res() }); }
 
 		aabb2 getResbbNDCAspect() { return toNdcAspectInv() * cst::resbb(); }
+
+		float getScreenLeft() { return (toNdcAspectInv() * cst::resbb()).fmin().x; }
+		float getScreenRight() { return (toNdcAspectInv() * cst::resbb()).fmax().x; }
+		float getScreenTop() { return (toNdcAspectInv() * cst::resbb()).fmin().y; }
+		float getScreenBottom() { return (toNdcAspectInv() * cst::resbb()).fmax().y; }
+
+		vec2 getPixel() { return (toNdcAspectInv() * aabb2(0.f, 1.f)).size(); }
 
 		void translate(vec2 v) { mStack.back() *= pmat3::translate(v); }
 		void rotate(float angle) { mStack.back() *= pmat3::rotate(angle); }
@@ -662,7 +667,7 @@ namespace prb {
 		void drawShape(std::vector<vec2> const& verts) { drawState.batching = false; drawTris(batchShape(verts));					drawState.batching = true; }
 		void drawShape(std::vector<vec2> verts, mat3 mat) { pushMatrix(mat);	drawState.batching = false; drawShape(verts);								drawState.batching = true; popMatrix(); }
 		void drawPoly(std::vector<vec2> verts) { drawState.batching = false; drawShape(verts, 1.f);							drawState.batching = true; }
-		void drawQuad(vec2 start, vec2 size, const mat3 mat) { pushMatrix(mat);	drawState.batching = false; drawTris(batchQuad({ start, size }));			drawState.batching = true; popMatrix(); }
+		void drawQuad(vec2 start, vec2 size, const mat3 mat) { pushMatrix(mat);	drawState.batching = false; drawTris(batchQuad({ start, start+size }));			drawState.batching = true; popMatrix(); }
 		void drawQuad(aabb2 quad, const mat3 mat) { pushMatrix(mat);	drawState.batching = false; drawTris(batchQuad(quad));						drawState.batching = true; popMatrix(); }
 		void drawCircle(mat3 mat, const int detail) { pushMatrix(mat);	drawState.batching = false; drawTris(batchCircle(mat, detail));				drawState.batching = true; popMatrix(); }
 
@@ -716,13 +721,20 @@ namespace prb {
 		void drawTexture(std::wstring const& path, const mat3 mat, aabb2 const& uv) { drawTexture(path, mat, uv[0], uv[1], uv[2], uv[3]); }
 		void drawTexture(std::wstring const& path, const mat3 mat) { drawTexture(path, mat, { 0.f, 1.f }); }
 
-
-		void bindTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler) {
-			devcon->PSSetShaderResources(0, 1, &resView);
-			devcon->PSSetSamplers(0, 1, &sampler);
+		void bindTexture(UINT slot, ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler) {
+			devcon->PSSetShaderResources(slot, 1, &resView);
+			devcon->PSSetSamplers(slot, 1, &sampler);
 		}
+		void bindTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler) { bindTexture(0, resView, sampler); }
+		
+		void bindTexture(UINT slot, Texture const& tex) { bindTexture(slot, tex.resView, tex.sampler); }
+		void bindTexture(Texture const& tex) { bindTexture(0, tex); }
 
-		void bindTexture(Texture const& tex) { bindTexture(tex.resView, tex.sampler); }
+		void bindTextures(std::vector<Texture> const& textures, UINT const& slotOffset) {
+			for (int i = 0; i < textures.size(); i++) {
+				bindTexture(slotOffset+i, textures[i]);
+			}
+		}
 
 		void drawTexture(ID3D11ShaderResourceView* resView, ID3D11SamplerState* sampler, const mat3 mat) {
 			bindTexture(resView, sampler); drawTexture(mat);
@@ -747,7 +759,7 @@ namespace prb {
 		outl::uniss text;
 		void drawText(std::string const& font, int const& fontSize, mat3 const& transform) {
 			if (text.str().length() == 0) return;
-			if (txrs.find(fontSize) == txrs.end()) { txrs[fontSize] = TextRenderer({ font }, fontSize);  txrs[fontSize].setOutline(2); txrs[fontSize].color(vc4::white); txrs[fontSize].outlineColor(vc4::black); }
+			if (txrs.find(fontSize) == txrs.end()) { txrs[fontSize] = TextRenderer({ font }, fontSize); txrs[fontSize].setOutline(2); txrs[fontSize].color(vc4::white); txrs[fontSize].outlineColor(vc4::black); }
 
 			std::vector<std::wstring> strs = stru::toLines(text.str());
 
@@ -763,9 +775,23 @@ namespace prb {
 		void drawText(vec2 const& pos) { drawText(pmat3::translate(pos)); }
 
 		aabb2 getTextBound(std::string const& font, int const& fontSize, mat3 const& transform) {
-			if (txrs.find(fontSize) == txrs.end()) txrs[fontSize] = TextRenderer({ font }, fontSize);
-			return txrs[fontSize].getAABBpx(transform);
+			if (text.str().length() == 0) return { 0.f, 0.f };
+			if (txrs.find(fontSize) == txrs.end()) { txrs[fontSize] = TextRenderer({ font }, fontSize);  txrs[fontSize].setOutline(2); txrs[fontSize].color(vc4::white); txrs[fontSize].outlineColor(vc4::black); }
+
+			std::vector<std::wstring> strs = stru::toLines(text.str());
+
+			aabb2 bb = 0.f;
+			if (strs.size() > 0) for (int i = 0; i < strs.size(); i++) bb.rescale(txrs[fontSize].getAABBpx(strs[i], transform * pmat3::translate(vec2(0.f, -(fontSize / cst::resy() * 2.f) * i))));
+			else bb = txrs[fontSize].getAABBpx(text.str(), font, 0.f, transform);
+
+			text.str(L"");
+			text.clear();
+
+			return bb;
 		}
+		aabb2 getTextBound(int const& fontSize, mat3 const& transform) { return getTextBound("assets/fonts/segoeui.ttf", fontSize, transform); }
+		aabb2 getTextBound(int const& fontSize, vec2 const& pos) { return getTextBound(fontSize, pmat3::translate(pos)); }
 		aabb2 getTextBound(mat3 const& transform) { return getTextBound("assets/fonts/segoeui.ttf", 15, transform); }
+		aabb2 getTextBound(vec2 const& pos) { return getTextBound(pmat3::translate(pos)); }
 	}
 }

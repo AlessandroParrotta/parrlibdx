@@ -1,7 +1,7 @@
 #include "imui.h"
 
-#include "../input.h"
 #include "../sprite.h"
+#include "../input.h"
 
 namespace prb {
 	namespace imui {
@@ -76,6 +76,18 @@ namespace prb {
 		//**(fast)dropdown container bodies are always on top of every other ui element
 
 		bool dropmenubeganopened = false;
+
+		//mat3 tospace() { return (util::getTopMatrix() * space).inverted() * util::getAspectOrtho(); }
+		//mat3 fromspace() { return util::getAspectOrtho().inverted() * util::getTopMatrix() * space; }
+
+		////projects the mouse from orthoNDC space to imui space
+		//vec2 mouseproj() {
+		//	return (util::getTopMatrix() * space).inverted() * util::getAspectOrtho() * input::getMousePos();
+		//}
+
+		//bool mouseInQuad(aabb2 const& bb) {
+		//	return input::mouseInQuad(util::getAspectOrtho().inverted() * util::getTopMatrix() * space * bb);
+		//}
 
 		mat3 tospace() { return (util::getTopMatrix() * space).inverted() * util::getAspectOrtho(); }
 		mat3 fromspace() { return util::getAspectOrtho().inverted() * util::getTopMatrix() * space; }
@@ -334,10 +346,14 @@ namespace prb {
 		void tfsetoff(textfieldo& tf, int selmax) { tf.selmax = selmax; }
 
 		void tfdrawcursor(textfieldo& tf, aabb2 const& subb, vec4 const& col) {
+			vec4 oldCol = util::getColor();
 			util::setColor(col);
+
 			vec2 tsz = vec2(subb.sizey() / 16.f, subb.size().y);
 			vec2 tof = subb[3] - (tsz / 2.f).xo();
 			util::drawQuad(tof, tsz);
+
+			util::setColor(oldCol);
 		}
 
 		void tfdrawcursor(textfieldo& tf, int sel, vec4 const& col, vec2 const& off, aabb2 const& ta, mat3 const& tr) {
@@ -498,8 +514,13 @@ namespace prb {
 					aabb2 minbb = strbb(substr(tf.vistext, 0, tf.sel - tf.off), off, ta, tr);
 					aabb2 maxbb = strbb(substr(tf.vistext, 0, tf.selmax - tf.off), off, ta, tr);
 					aabb2 selbb = stbb.minx(minbb.maxx()).maxx(maxbb.maxx());
+
+					vec4 oldCol = util::getColor();
 					util::setColor(vc4::cyan.a(.5f));
+
 					util::drawQuad(selbb);
+
+					util::setColor(oldCol);
 
 					tfdrawcursor(tf, tf.selmax, vc4::black, stbb, off, ta, tr);
 				}
@@ -536,7 +557,7 @@ namespace prb {
 						//tf.sel--; 
 					}
 				}
-				if (input::getKey(VK_DELETE) && txcontrol(tf, speed)) { 
+				if (input::getKey(VK_DELETE) && txcontrol(tf, speed)) {
 					if (input::getKey(VK_LCONTROL)) {
 						tf.selmax = tf.sel;
 						tf.selmax = outl::clamp(tf.selmax, 0, tf.text->length() - 1);
@@ -588,11 +609,11 @@ namespace prb {
 					}
 				}
 
-				if (input::getKey(VK_BACK)	||
+				if (input::getKey(VK_DELETE)	||
 					input::getKey(VK_LEFT)		||
 					input::getKey(VK_RIGHT)		||
 					(input::getKey(VK_LCONTROL) && input::getKey('V')) ||
-					input::getKey(VK_DELETE)
+					input::getKey(VK_BACK)
 					) tf.txtimer += tick::deltaTime;
 				else { tf.txtimer = 0.f; tf.txfirst = false; }
 
@@ -974,7 +995,7 @@ namespace prb {
 		}
 
 		void reset() {
-			if (ststack.size() > 0) { deb::out("warning: degenerate imui stack at end of frame!\n"); ststack.st.clear(); }
+			if (ststack.size() > 0) { std::cout << "warning: degenerate imui stack at end of frame!\n"; ststack.st.clear(); }
 			//if(containers.size() > 0) containers.clear();
 
 			if (dropmenu) {	//there can only be one dropmenu activated at one time
@@ -1022,7 +1043,7 @@ namespace prb {
 			bool rem = true;
 			while (rem) {
 				rem = false;
-				for (auto& c : pingContainers) if (!c.second) { containers.erase(c.first);  posContainers.erase(c.first); pingContainers.erase(c.first); rem = true; break; }
+				for (auto& c : pingContainers) if (!c.second) { containers.erase(c.first); posContainers.erase(c.first); pingContainers.erase(c.first); rem = true; break; }
 			}
 		
 

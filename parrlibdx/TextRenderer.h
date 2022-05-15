@@ -11,13 +11,13 @@
 #include FT_STROKER_H
 
 #include <parrlibcore/vector2f.h>
-#include <parrlibcore/vector4f.h>
 #include <parrlibcore/matrix3f.h>
 #include <parrlibcore/utils2d/axisalignedboundingbox2D.h>
 
 #include "stringutils.h"
+#include "Texture.h"
 #include "FlowTexture.h"
-#include "Shader.h"
+#include "shader.h"
 #include "vertexbuffer.h"
 
 
@@ -78,7 +78,8 @@ namespace prb {
 		bool outlineEnabled = false;
 		unsigned int outlinepx = 0;
 
-		int minFilter = D3DX11_FILTER_LINEAR, magFilter = D3DX11_FILTER_LINEAR;
+		//GLint minFilter = GL_LINEAR, magFilter = GL_LINEAR;
+		TEXTURE_FILTERING minFilter = LINEAR, magFilter = LINEAR;
 
 		vec2 border = 2.f;
 		vec2 spacing = { 2.f, 2.f };
@@ -97,7 +98,7 @@ namespace prb {
 		vec4 vcolor = vc4::black, voutlineColor = vc4::black;
 
 		std::vector<float> data;
-		//std::vector<float> dataColor;
+		std::vector<float> dataColor;
 
 		struct DrawRes { int count; vec2 cur; };
 		DrawRes drawWStringPriv(std::wstring const& str, std::string const& font, vec2 const& off, mat3 const& transform);
@@ -147,6 +148,10 @@ namespace prb {
 
 		void drawWStringpx(std::string const& font, vec2 const& offset, aabb2 const& bound, mat3 const& transform);
 
+		void drawText(std::wstring const& str, vec2 const& pos);
+		template<typename... Args> void drawText(vec2 const& pos, Args... args) { std::wstring wstr = stru::composew(args...); drawText(wstr, pos); }
+		template<typename... Args> void drawText(std::function<vec2(aabb2 const&)> fPos, Args... args) { std::wstring wstr = stru::composew(args...); aabb2 bb = getAABBpx(wstr, mat3(1.f)); vec2 pos = fPos(bb); drawText(wstr, pos); }
+
 		aabb2 getAABBReal(std::wstring const& str, std::string const& font, vec2 const& off, mat3 const& transform);
 		aabb2 getAABBReal(std::wstring const& str, mat3 const& transform);
 		aabb2 getAABBReal(mat3 const& transform);
@@ -170,10 +175,6 @@ namespace prb {
 		bwstring getWStringBoundedpx(std::wstring const& str, aabb2 const& bound, vec2 const& offset, mat3 const& transform);
 		bwstring getWStringBoundedpx(std::wstring const& str, aabb2 const& bound, mat3 const& transform);
 
-		void drawText(std::wstring const& str, vec2 const& pos);
-		template<typename... Args> void drawText(vec2 const& pos, Args... args) { std::wstring wstr = stru::composew(args...); drawText(wstr, pos); }
-		template<typename... Args> void drawText(std::function<vec2(aabb2 const&)> fPos, Args... args) { std::wstring wstr = stru::composew(args...); aabb2 bb = getAABBpx(wstr, mat3(1.f)); vec2 pos = fPos(bb); drawText(wstr, pos); }
-
 		void addFont(std::string const& font);
 
 		void setFontSize(int fontSize);
@@ -191,9 +192,13 @@ namespace prb {
 		void outlineColor(vec4 outlineColor);
 		vec4 outlineColor();
 
-		void setFiltering(int min, int mag);
-		int getMagFilter();
-		int getMinFilter();
+		//void setFiltering(GLint min, GLint mag);
+		//GLint getMagFilter();
+		//GLint getMinFilter();
+
+		void setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag);
+		TEXTURE_FILTERING getMagFilter();
+		TEXTURE_FILTERING getMinFilter();
 
 		Texture getAtlas();
 

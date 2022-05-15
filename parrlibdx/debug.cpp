@@ -8,6 +8,7 @@
 #include <string>
 
 #include <parrlibcore/otherutil.h>
+#include <parrlibcore/tick.h>
 
 #include "Input.h"
 
@@ -77,6 +78,7 @@ namespace prb {
 			debtxr = { { ("assets/fonts/segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
 			debtxr.color(vc4::white);
 			debtxr.setOutline(2);
+			debtxr.setFiltering(NEAREST, NEAREST);
 			//deb::out("initialized deb textrenderer\n");
 			//deb::out("debtxr tex size ", debtxr.getBackAtlas().tex.getSize(), "\n");
 		}
@@ -161,7 +163,7 @@ namespace prb {
 					//float y = 1.0f - cheight * i;
 					//vec2 screen = cst::res().aspectmaxv();
 					//vec2 pos = screen.nx() - vec2y(cheight * i);
-					vec2 pos = vec2(-1.f, .99f) - vec2y(cheight * i);
+					vec2 pos = vec2(util::getScreenLeft(), .99f) - vec2y(cheight * i);
 
 					//deb::out(screen, " ", pos, "\n");
 
@@ -222,7 +224,8 @@ namespace prb {
 					if (ypos >= 0.0f) break;
 
 
-					debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(-1.f, ypos)));
+					//debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(-1.f, ypos)));
+					debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(util::getScreenLeft(), ypos)));
 					//std::cout << "drawStr\n";
 				}
 			}
