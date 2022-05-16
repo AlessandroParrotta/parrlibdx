@@ -80,13 +80,33 @@ namespace prb {
 				POINT p;
 				GetCursorPos(&p);
 
-				RECT rec;
-				GetWindowRect(windowHwnd, &rec);
+				//RECT wrec;
+				//GetWindowRect(windowHwnd, &wrec);
 
 				//RECT crec;
 				//GetClientRect(windowHwnd, &crec);
 
-				rawMousePos = { (float)p.x - (float)rec.left - 8, (float)p.y - (float)rec.top - 31 };
+				//rawMousePos = { 
+				//	(float)p.x - (float)(wrec.left + (prc::getMaximized() && !prc::isFullscreen() ? 8 : 0)), 
+				//	(float)p.y - (float)(((wrec.bottom-(wrec.top + (prc::getMaximized() && !prc::isFullscreen() ? 8 : 0))) - crec.bottom)) 
+				//};
+
+				//int marginX = (wrec.right - wrec.left) - crec.right;
+				//int marginY = (wrec.bottom - wrec.top) - crec.bottom;
+
+				//rawMousePos = { 
+				//	(float)p.x - (float)(wrec.left + (prc::getMaximized() && !prc::isFullscreen() ? 8 : 0)), 
+				//	(float)p.y - (float)(((wrec.bottom-(wrec.top + (prc::getMaximized() && !prc::isFullscreen() ? 8 : 0))) - crec.bottom)) 
+				//};
+
+				//ClientToScreen(windowHwnd, &p);
+				ScreenToClient(windowHwnd, &p);
+
+				rawMousePos = { (float)p.x, (float)p.y };
+
+				//deb::prt("window ", wrec.left, " ", wrec.right, " ", wrec.top, " ", wrec.bottom, "\n");
+				//deb::prt("client ", crec.left, " ", crec.right, " ", crec.top, " ", crec.bottom, "\n");
+				//deb::prt("mpos ", p.x, " ", p.y, "\n");
 
 				mousePos = getRawMousePos();
 				mouseDelta = mousePos - oldMousePos;
@@ -567,7 +587,7 @@ namespace prb {
 
 		Vector2f getMousePosNdc() {
 			if (getCursorInputMode() == MOUSE_LOCKED) return disabledMousePos;
-			else return (mousePos / prc::res() * 2.f - 1.f).ny();
+			else return (mousePos / prc::cres() * 2.f - 1.f).ny();
 		}
 
 		vec2 getMousePos() { return util::getAspectOrtho().inverted() * (!prc::inApp ? 1.f : pmat3::getNdc(prc::sbb)) * getMousePosNdc(); }
@@ -640,7 +660,7 @@ namespace prb {
 		}
 
 		Vector2f getRawMousePosInv() {
-			return Vector2f(getRawMousePos().x, prc::wsize.y - getRawMousePos().y);
+			return Vector2f(getRawMousePos().x, prc::csize.y - getRawMousePos().y);
 		}
 
 		/*Vector2f getMousePerc() {

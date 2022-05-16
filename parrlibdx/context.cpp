@@ -6,12 +6,12 @@
 #include <parrlibcore/otherutil.h>
 #include <parrlibcore/tick.h>
 
-#include "common.h"
 #include "Input.h"
 #include "debug.h"
 #include "shader.h"
 #include "util.h"
 #include "debugmenu\debugmenu.h"
+#include "framebuffer.h"
 
 namespace prb {
     namespace Context {
@@ -32,11 +32,29 @@ namespace prb {
 
         bool inApp = false;
 
-        vec2 wsize = 0.f;		//frontbuffer size
-        aabb2 wbb = 0.f;		//frontbuffer bounding box
+        const int SCALING_MODE_ONE_TO_ONE = 0;
+        const int SCALING_MODE_INTEGER_RATIO = 1;
+        const int SCALING_MODE_FLOATING_RATIO = 2;
+        const int SCALING_MODE_FILL = 3;
+        int vscalingMode = SCALING_MODE_ONE_TO_ONE;		//scaling mode, 0=onetoone, 1=intratio, 2=fratio, 3=fill
+        
+        void scalingMode(int sc) { if (vscalingMode != 0 && sc == 0) { resize(csize); } vscalingMode = sc; }
+        int scalingMode() { return vscalingMode; }
+
+        fbuf fbo;
+
+        vec2 res() { return fbo.size(); }
+
+        void setFiltering(TEXTURE_FILTERING filtering) { fbo.setFiltering(filtering); }
+
+        vec2 wsize = 0.f;		//window size
+        vec2 csize = 0.f;		//frontbuffer (client) size
+        aabb2 wbb = 0.f;		//window bounding box
+        aabb2 cbb = 0.f;		//frontbuffer (client) bounding box
         aabb2 sbb = 0.f;		//logical screen bounding box
 
         vec2 wres() { return wsize; }
+        vec2 cres() { return csize; }
 
         UINT peekMessageAction = PM_REMOVE;
         void setPeekMessageAction(UINT val) { prc::peekMessageAction = val; }
@@ -64,6 +82,7 @@ namespace prb {
         double getCurTime() { return curtime; }
 
         bool initialized = false;
+        bool inited = false; //just for onResize
 
         std::wstring title = L"DirectX11 Parrlib Application";
         void setTitle(std::wstring title) {
@@ -102,6 +121,8 @@ namespace prb {
         void setAntiAliasing(int aa) { prc::antiAlias = aa; }
         int getAntiAliasing() { return antiAlias; }
 
+        bool isFullscreen() { return fullscreen; }
+
         bool skipFrameb = false;
         void skipFrame() { skipFrameb = true; }
 
@@ -137,7 +158,9 @@ namespace prb {
             deb::prt("FPS: ", (int)lerpFps, " (", stru::ts::fromSec(lerpDeltaTime, 2), ")\n");
             //deb:prt("FPS: ", (1. / deltaTime), "\n");
 
-            devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(clearColor.x, clearColor.y, clearColor.z, clearColor.w));
+
+            //devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(clearColor.x, clearColor.y, clearColor.z, clearColor.w));
+            devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.f, 0.f, 0.f, 1.f));
 
             //float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
             UINT sampleMask = 0xffffffff;
@@ -157,9 +180,34 @@ namespace prb {
                 }
             }
 
-            sbb = { 0.f, wsize }; sbb = pmat3::getNdc(wbb) * sbb;
+            //sbb = { 0.f, csize }; sbb = pmat3::getNdc(wbb) * sbb;
+            switch (vscalingMode) {
+            case SCALING_MODE_ONE_TO_ONE: case SCALING_MODE_FILL: sbb = { 0.f, csize }; sbb = pmat3::getNdc(cbb) * sbb; break;
+            case SCALING_MODE_INTEGER_RATIO:
+            {
+                vec2 perc = cbb.size() / fbo.size();
 
-            util::multMatrix(util::getAspectOrtho());
+                float scale = std::fmax(perc.minv(), 0.f);
+                if (scale < 1.f) scale = 1.f / std::ceilf(1.f / scale);
+                else scale = std::floorf(scale);
+
+                sbb = (aabb2{ 0.f, fbo.size() } *scale).centered() + (csize / 2.f).floored();
+                sbb = pmat3::getNdc(cbb) * sbb;
+            }
+            break;
+            case SCALING_MODE_FLOATING_RATIO: sbb = { 0.f, fbo.size() }; sbb = pmat3::getNdc(cbb) * sbb.fitted(cbb); break;
+            }
+
+            cst::res(csize);
+
+            if (fbo.size() != csize) {
+                fbo.clear(clearColor);
+                fbo.bind();
+            }
+            //else { glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); }
+            else { devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(clearColor.x, clearColor.y, clearColor.z, clearColor.w)); }
+
+            util::pushMatrix(util::getAspectOrtho());
 
             inApp = true;
 
@@ -167,9 +215,26 @@ namespace prb {
             funcs[FUPDATE]();
             funcs[FDRAW]();
 
+            util::popMatrix();
+
             if (!debugmenu::enabled) imui::reset();
 
             inApp = false;
+
+            cst::res(csize);
+
+            if (fbo.size() != csize) { fbo.unbind(); }
+
+            //deb::prt("scaling mode ", vscalingMode, "\nbbs ", wbb, " ", cbb, " ", sbb, "\n");
+            //deb::prt("res ", cst::res(), "\n");
+
+            if (fbo.size() != csize) {
+                //util::drawTexture(fbo.getAttachment(GL_COLOR_ATTACHMENT0), sbb, 1.f);
+                util::setColor(vc4::white);
+                fbo.drawImmediate(pmat3::translate(sbb.center()) * pmat3::scale(sbb.size() / 2.f));
+            }
+
+            util::pushMatrix(util::getAspectOrtho());
 
             imui::setSpace(1.f);
             if (debugmenu::enabled) {
@@ -177,6 +242,8 @@ namespace prb {
             }
 
             deb::drawDebStrs(cst::res());
+
+            util::popMatrix();
 
             ThrowIfFailed(swapchain->Present(vSync, 0));
 
@@ -369,8 +436,17 @@ namespace prb {
         }
 
         void resize(vec2 size) {
+            if (size.x == 0 || size.y == 0) return;
+            if (vscalingMode == SCALING_MODE_ONE_TO_ONE && size != csize) { scalingMode(SCALING_MODE_FLOATING_RATIO); }
+
+            cst::res(size);
+
+            resizing = true;
+            fbo.resize(size);
+        }
+
+        void OnResize() {
             if (!swapchain) return;
-            if (cst::res() == size) return;
             RECT wrect; GetWindowRect(windowHwnd, &wrect);
             wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
@@ -378,6 +454,9 @@ namespace prb {
 
             RECT rect; GetClientRect(windowHwnd, &rect);
             int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
+            csize = vec2(rect.right - rect.left, rect.bottom - rect.top);
+
+            cbb = { 0.f, csize };
 
             devcon->OMSetRenderTargets(0, 0, 0);
 
@@ -410,7 +489,8 @@ namespace prb {
 
             AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
 
-            cst::res(vec2(nSizeX, nSizeY));
+            if (vscalingMode == 0) resize(vec2(nSizeX, nSizeY));
+            //cst::res(vec2(nSizeX, nSizeY));
 
             resizing = true;
 
@@ -418,13 +498,22 @@ namespace prb {
             //funcs[FRESIZE]();       //TODO: fix start resize and end resize
             //funcs[FENDRESIZE]();
 
-            RenderFrame();
+            if(inited) RenderFrame();
         }
 
         LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
 
             fWindowProcPrec(hWnd, message, wParam, lParam);
+
+            RECT wrect; GetWindowRect(windowHwnd, &wrect);
+            wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+            wbb = { 0.f, wsize };
+
+            RECT crect; GetClientRect(windowHwnd, &crect);
+            int nSizeX = crect.right - crect.left, nSizeY = crect.bottom - crect.top;
+            csize = vec2(crect.right - crect.left, crect.bottom - crect.top);
+            cbb = { 0.f, csize };
 
             switch (message)
             {
@@ -436,13 +525,17 @@ namespace prb {
             case WM_SIZE:
             {
                 if (!swapchain) return 0;
-                RECT wrect; GetWindowRect(windowHwnd, &wrect);
+                wrect; GetWindowRect(windowHwnd, &wrect);
                 wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+                wbb = { 0.f, wsize };
 
-                RECT rect; GetClientRect(windowHwnd, &rect);
-                int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
+                crect; GetClientRect(windowHwnd, &crect);
+                int nSizeX = crect.right - crect.left, nSizeY = crect.bottom - crect.top;
+                csize = vec2(crect.right - crect.left, crect.bottom - crect.top);
+                cbb = { 0.f, csize };
 
-                resize(vec2(nSizeX, nSizeY));
+                //resize(vec2(nSizeX, nSizeY));
+                OnResize();
             }break;
             case WM_MOUSEWHEEL:
             {
@@ -502,6 +595,8 @@ namespace prb {
         }
 
         void setup(HINSTANCE hInstance) {
+            if (cst::resx() != 0.f && cst::resy() != 0.f && vscalingMode == SCALING_MODE_ONE_TO_ONE) scalingMode(SCALING_MODE_FLOATING_RATIO);
+
             // guarantees an approximate error of 1ms for every sleep call
             // if you don't call this, your timer functions will probably sleep for 3x the amount
             // you specify or more, you need to call a matching timeEndPeriod with the same quantity as this
@@ -538,10 +633,15 @@ namespace prb {
 
             getVideoModes();
 
+            //const HWND hDesk = GetDesktopWindow();
+            //RECT desktop; GetWindowRect(hDesk, &desktop);
+            //if (cst::res() <= 0.f) cst::res(vec2(desktop.right, desktop.bottom));
+            //else { desktop.right = cst::resx(); desktop.bottom = cst::resy(); }            
+            
             const HWND hDesk = GetDesktopWindow();
             RECT desktop; GetWindowRect(hDesk, &desktop);
-            if (cst::res() <= 0.f) cst::res(vec2(desktop.right, desktop.bottom));
-            else { desktop.right = cst::resx(); desktop.bottom = cst::resy(); }
+            int nSizeX = desktop.right - desktop.left, nSizeY = desktop.bottom - desktop.top;
+            //if (cst::resx() == 0.f || cst::resy() == 0.f) cst::res(vec2(nSizeX, nSizeY));
 
             WNDCLASSEX wc;
 
@@ -558,7 +658,8 @@ namespace prb {
 
             RegisterClassEx(&wc);
 
-            RECT wr = { 0, 0, (int)cst::resx(), (int)cst::resy() };
+            //RECT wr = { 0, 0, (int)cst::resx(), (int)cst::resy() };
+            RECT wr = { 0, 0, nSizeX, nSizeY };
             AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
             windowHwnd = CreateWindowEx(NULL,
@@ -578,6 +679,11 @@ namespace prb {
             wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
 
             wbb = { 0.f, wsize };
+
+            RECT rect; GetClientRect(windowHwnd, &rect);
+            csize = vec2(rect.right - rect.left, rect.bottom - rect.top);
+
+            cbb = { 0.f, csize };
 
             //THIS IS A GLOBAL COLOR CHANGE, EVEN OTHER PROGRAMS
             //int aElements[2] = { COLOR_WINDOW, COLOR_ACTIVECAPTION };
@@ -604,11 +710,21 @@ namespace prb {
             ShowWindow(windowHwnd, maximized ? SW_MAXIMIZE : SW_NORMAL);
             UpdateWindow(windowHwnd);
 
-            RECT rect; GetClientRect(windowHwnd, &rect);
-            int nSizeX = rect.right - rect.left, nSizeY = rect.bottom - rect.top;
-            cst::res(vec2(nSizeX, nSizeY));
-
             InitD3D(windowHwnd);
+
+            RECT crect; GetClientRect(windowHwnd, &crect);
+            nSizeX = crect.right - crect.left, nSizeY = crect.bottom - crect.top;
+            if (cst::resx() == 0.f || cst::resy() == 0.f) cst::res(vec2(nSizeX, nSizeY));
+
+            GetWindowRect(windowHwnd, &wrect);
+            wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+
+            wbb = { 0.f, wsize };
+
+            GetClientRect(windowHwnd, &rect);
+            csize = vec2(rect.right - rect.left, rect.bottom - rect.top);
+
+            cbb = { 0.f, csize };
 
             //deb::out("inited D3D\n");
 
@@ -631,6 +747,11 @@ namespace prb {
             //deb << "maxref " << maxRefreshRate << "\n";
             //framerateCap = maxRefreshRate;
 
+            fbo = FrameBuffer(cst::res());
+            fbo.setFiltering(NEAREST, NEAREST);
+
+            if (cst::resx() == 0.f || cst::resy() == 0.f) cst::res(csize);
+
             initialized = true;
 
             imui::init();
@@ -639,6 +760,22 @@ namespace prb {
             imui::setTextColor(vc4::black);
 
             debugmenu::init();
+
+            wrect; GetWindowRect(windowHwnd, &wrect);
+            wsize = vec2(wrect.right - wrect.left, wrect.bottom - wrect.top);
+            wbb = { 0.f, wsize };
+
+            crect; GetClientRect(windowHwnd, &crect);
+            nSizeX = crect.right - crect.left, nSizeY = crect.bottom - crect.top;
+            csize = vec2(crect.right - crect.left, crect.bottom - crect.top);
+            cbb = { 0.f, csize };
+
+            if (cst::resx() == 0.f || cst::resy() == 0.f) cst::res(csize);
+            resize(cst::res());
+
+            OnResize();
+
+            inited = true;
 
             //deb::out("calling init\n");
             funcs[FINIT]();
@@ -730,7 +867,6 @@ namespace prb {
             cst::res(res);
             setup(hInstance, tfuncs);
         }
-        vec2 res() { return cst::res(); }
 
         mat3 getAspectOrthoX() { return pmat3::orthoAspectX(cst::res()); }
         mat3 getAspectOrthoY() { return pmat3::orthoAspectY(cst::res()); }

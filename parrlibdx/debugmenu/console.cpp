@@ -167,7 +167,7 @@ namespace prb {
 			int n = txr.getFontSize();
 			float h = 1.f / (float)txr.getFontSize() + .01f;
 			for (int i = outl::imin(strs.size() - 1, strs.size() - 1 - off); i >= outl::imax(strs.size() - 1 - n - off, 0); i--) {
-				txr.drawWStringpx(strs[i], vec2(1.f, 0.f), aabb2s(4.f), pmat3::translate(vec2(-(prc::wsize.x / prc::wsize.y) + .005f, -.9f + h / 2.f + .005f) + vec2(0.f, h * (strs.size() - 1 - i - off))));
+				txr.drawWStringpx(strs[i], vec2(1.f, 0.f), aabb2s(4.f), pmat3::translate(vec2(-(prc::csize.x / prc::csize.y) + .005f, -.9f + h / 2.f + .005f) + vec2(0.f, h * (strs.size() - 1 - i - off))));
 			}
 
 			int inp = imui::textField("deb_console_text", L"", L"...", vec2(0.f, -.95f), vec2(4.f, .1f), &text);

@@ -19,6 +19,8 @@
 
 #include <parrlibcore/constants.h>
 
+#include "common.h"
+
 namespace prb {
 	/*
 		Main DirectX11 context
@@ -48,10 +50,24 @@ namespace prb {
 
 		extern bool inApp;
 
+		extern const int SCALING_MODE_ONE_TO_ONE;
+		extern const int SCALING_MODE_INTEGER_RATIO;
+		extern const int SCALING_MODE_FLOATING_RATIO;
+		extern const int SCALING_MODE_FILL;
+
+		void scalingMode(int sc); //scaling mode, 0=onetoone, 1=intratio, 2=fratio, 3=fill
+		int scalingMode(); //scaling mode, 0=onetoone, 1=intratio, 2=fratio, 3=fill
+
+		vec2 res();
+
+		void setFiltering(TEXTURE_FILTERING filtering);
+
 		extern vec2 wsize;
+		extern vec2 csize;
 		extern aabb2 sbb;
 
 		vec2 wres();
+		vec2 cres();
 
 		void resize(vec2 size);
 
@@ -129,10 +145,10 @@ namespace prb {
 		void setAntiAliasing(int aa);
 		int getAntiAliasing();
 
+		bool isFullscreen();
+
 		//void setClearColor(vec4 col);
 		//vec4 getClearColor();
-
-		vec2 res();
 
 		mat3 getAspectOrthoX();
 		mat3 getAspectOrthoY();

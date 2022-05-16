@@ -50,7 +50,8 @@ namespace prb {
         D3D11_SAMPLER_DESC samplerDesc;
 
         // Create a texture sampler state description.
-        samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        //samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        samplerDesc.Filter = filtering;
         samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -146,8 +147,11 @@ namespace prb {
     void FrameBuffer::resize(vec2 res) {
         dispose();
         FrameBuffer fb(res, format);
+        fb.setFiltering(filtering);
         *this = fb;
     }
+
+    vec2 FrameBuffer::size() const { return res; }
 
     void FrameBuffer::clear(vec4 color) {
         float tcol[4] = { color.x, color.y, color.z, color.w };
@@ -164,10 +168,15 @@ namespace prb {
         devcon->OMSetRenderTargets(1, &rtv, depthStencilView);
         devcon->OMSetDepthStencilState(depthStencilState, 0);
         devcon->RSSetViewports(1, &viewport);
+
+        oldres = cst::res();
+        cst::res(res);
     }
 
     void FrameBuffer::unbind() {
         devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+
+        cst::res(oldres);
 
         D3D11_VIEWPORT viewport;
         ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -179,6 +188,45 @@ namespace prb {
 
         devcon->RSSetViewports(1, &viewport);
     }
+
+    D3D11_FILTER FrameBuffer::getFromFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip) const {
+        return prb::getFromFiltering(min, mag, mip);
+    }
+
+    void FrameBuffer::calcMinMagMip(D3D11_FILTER filter) {
+        std::tuple<TEXTURE_FILTERING, TEXTURE_FILTERING, TEXTURE_FILTERING> ret = prb::calcMinMagMip(filter);
+        min = std::get<0>(ret); mag = std::get<1>(ret); mip = std::get<2>(ret);
+    }
+
+    void FrameBuffer::setFiltering(D3D11_FILTER filter) {
+        this->filtering = filter;
+        if (!texture || !resView || !sampler) return;
+
+        calcMinMagMip(filter);
+
+        if (sampler) { sampler->Release();  sampler = NULL; }
+
+        D3D11_SAMPLER_DESC samplerDesc;
+        samplerDesc.Filter = filtering;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.MipLODBias = 0.0f;
+        samplerDesc.MaxAnisotropy = 1;
+        samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+        samplerDesc.BorderColor[0] = 0;
+        samplerDesc.BorderColor[1] = 0;
+        samplerDesc.BorderColor[2] = 0;
+        samplerDesc.BorderColor[3] = 0;
+        samplerDesc.MinLOD = 0;
+        samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+        // Create the texture sampler state.
+        ThrowIfFailed(dev->CreateSamplerState(&samplerDesc, &sampler));
+    }
+    void FrameBuffer::setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag, TEXTURE_FILTERING mip) { this->min = min; this->mag = mag; this->mip = mip; setFiltering(getFromFiltering(min, mag, mip)); }
+    void FrameBuffer::setFiltering(TEXTURE_FILTERING min, TEXTURE_FILTERING mag) { this->min = min; this->mag = mag; mip = mag; setFiltering(getFromFiltering(min, mag, mip)); }
+    void FrameBuffer::setFiltering(TEXTURE_FILTERING filter) { min = mag = mip = filter; setFiltering(getFromFiltering(min, mag, mip)); }
 
     void FrameBuffer::bindTex() {
         devcon->PSSetShaderResources(0, 1, &resView);

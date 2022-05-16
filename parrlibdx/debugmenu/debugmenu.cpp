@@ -73,16 +73,15 @@ namespace prb {
 				prc::setFramerateCap(fpscap);
 			}
 
-			// TODO
-			//int rfilt = imui::comboBox("__parrfilt", L"Filtering", fopts, 1);
-			//if (rfilt > -1) {
-			//	prc::setFiltering(rfilt == 0 ? GL_LINEAR : GL_NEAREST);
-			//}
+			int rfilt = imui::comboBox("__parrfilt", L"Filtering", fopts, 1);
+			if (rfilt > -1) {
+				prc::setFiltering(rfilt == 0 ? LINEAR : NEAREST);
+			}
 
-			//int rscal = imui::comboBox("__parrscal", L"Scaling", sopts, prc::scalingMode());
-			//if (rscal > -1) {
-			//	prc::scalingMode(rscal);
-			//}
+			int rscal = imui::comboBox("__parrscal", L"Scaling", sopts, prc::scalingMode());
+			if (rscal > -1) {
+				prc::scalingMode(rscal);
+			}
 		}
 
 		void input() {

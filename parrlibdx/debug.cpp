@@ -163,12 +163,12 @@ namespace prb {
 					//float y = 1.0f - cheight * i;
 					//vec2 screen = cst::res().aspectmaxv();
 					//vec2 pos = screen.nx() - vec2y(cheight * i);
-					vec2 pos = vec2(util::getScreenLeft(), .99f) - vec2y(cheight * i);
+					vec2 pos = vec2(util::getScreenLeft(), util::getScreenTop()) - vec2y(cheight * i);
 
 					//deb::out(screen, " ", pos, "\n");
 
 					//if (pos.y >= -screen.y && pos.y <= screen.y) {
-					if (pos.y >= -1.f && pos.y <= 1.f) {
+					if (pos.y >= util::getScreenBottom() && pos.y <= util::getScreenTop()) {
 						//txr.drawWStringpx(rtStrs[i], vec2(1.f), pmat3::translate(vec2(-prc::wres().aspectmax(), y)));
 						//txr.drawWStringpx(rtStrs[i], vec2(1.f).ny(), pmat3::translate(vec2(-std::fmax(prc::wres().aspectx(),1.f),y)));
 						debtxr.drawWStringpx(rtdebs[i], vec2(1.f).ny(), pmat3::translate(pos));
@@ -218,9 +218,9 @@ namespace prb {
 				startOffset = outl::imax(startOffset, 0);
 
 				for (int i = strs.size() - 1 - startOffset; i >= 0; i--) {
-					float ypos = -0.99f + cheight * (strs.size() - 1 - i - startOffset) - sliderVal;
+					float ypos = util::getScreenBottom()+util::getPixel().y + cheight * (strs.size() - 1 - i - startOffset) - sliderVal;
 
-					if (ypos < -1.0f - cheight) continue;
+					if (ypos < util::getScreenBottom() - cheight) continue;
 					if (ypos >= 0.0f) break;
 
 

@@ -97,8 +97,8 @@ namespace prb {
 
 		float getScreenLeft() { return (toNdcAspectInv() * cst::resbb()).fmin().x; }
 		float getScreenRight() { return (toNdcAspectInv() * cst::resbb()).fmax().x; }
-		float getScreenTop() { return (toNdcAspectInv() * cst::resbb()).fmin().y; }
-		float getScreenBottom() { return (toNdcAspectInv() * cst::resbb()).fmax().y; }
+		float getScreenBottom() { return (toNdcAspectInv() * cst::resbb()).fmin().y; }
+		float getScreenTop() { return (toNdcAspectInv() * cst::resbb()).fmax().y; }
 
 		vec2 getPixel() { return (toNdcAspectInv() * aabb2(0.f, 1.f)).size(); }
 
