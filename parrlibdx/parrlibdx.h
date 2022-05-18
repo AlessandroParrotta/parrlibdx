@@ -28,6 +28,9 @@
 #include "constantbuffer.h"
 #include "vertexbuffer.h"
 #include "framebuffer.h"
+#include "audio/audio.h"
+#include "audio/audioclip.h"
+#include "audio/audiosource.h"
 #include "ui/imui.h"
 
 #endif

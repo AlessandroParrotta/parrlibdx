@@ -157,6 +157,9 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="audio\audio.h" />
+    <ClInclude Include="audio\audioclip.h" />
+    <ClInclude Include="audio\audiosource.h" />
     <ClInclude Include="camera3d.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="constantbuffer.h" />
@@ -180,6 +183,9 @@
     <ClInclude Include="vertexbuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="audio\audio.cpp" />
+    <ClCompile Include="audio\audioclip.cpp" />
+    <ClCompile Include="audio\audiosource.cpp" />
     <ClCompile Include="camera3d.cpp" />
     <ClCompile Include="common.cpp" />
     <ClCompile Include="constantbuffer.cpp" />

@@ -2,11 +2,12 @@
 
 #include "../util.h"
 #include "../context.h"
+#include "../debug.h"
 
 namespace prb {
 	namespace debugmenu {
 		bool enabled = false;
-		int page = 0;
+		int page = 4;
 		float centerSpacing = .03f;
 		float headerHeight = .1f;
 		float headerAreaSpacing = .03f;
@@ -19,7 +20,7 @@ namespace prb {
 		//---------------------------PAGES---------------------
 		int pagenum = 5;
 
-		std::vector<std::wstring> vopts; //video options TODO: populate in init() or whatever
+		std::vector<std::wstring> vopts; //video options
 		std::vector<vec2> voptssizes;	//actual video resolutions
 
 		std::vector<std::wstring> fopts = { L"Linear", L"Nearest" }; //filtering 
@@ -89,11 +90,70 @@ namespace prb {
 		}
 
 		void debug() {
+			imui::setLayout(imui::VERTICAL);
+			imui::setSize(vec2(util::getResbbNDCAspect().size().x, .13f));
+			imui::setOffset(imui::state.size.ny());
 
+			float starty = util::getResbbNDCAspect()[1].y - headerHeight - imui::state.size.y / 2.f - headerAreaSpacing;
+
+			imui::setPos(vec2(
+				-centerSpacing - imui::state.size.x / 2.f,
+				starty
+			));
+
+			imui::labelBound(L"Enable On-Screen Messages:", vec2x(-1.f));
+			imui::labelBound(L"Enable Real-Time Messages:", vec2x(-1.f));
+			imui::labelBound(L"Enable Log Messages:", vec2x(-1.f));
+			imui::labelBound(L"Show FPS:", vec2x(-1.f));
+
+			imui::setSize(vec2(.6f, .12f));
+			//imui::setOffset(imui::state.size.ny());
+
+			imui::setPos(vec2(centerSpacing + imui::state.size.x / 2.f, starty));
+
+			vec2 siz = imui::state.size; imui::setSize(siz.y);
+			bool drawStrs = deb::drawStrs; if (imui::checkBox("__parrdrawStrs", &drawStrs)) {
+				deb::drawStrs = drawStrs;
+			}
+
+			bool RTmsgs = deb::drawRT; if (imui::checkBox("__parrRTMsgs", &RTmsgs)) {
+				deb::drawRT = RTmsgs;
+			}
+
+			siz = imui::state.size; imui::setSize(siz.y);
+			bool msgs = deb::drawMsgs; if (imui::checkBox("__parrMsgs", &msgs)) {
+				deb::drawMsgs = msgs;
+			}
+
+			bool showFPS = deb::showFPS; if (imui::checkBox("__parrFPS", &showFPS)) {
+				deb::showFPS = showFPS;
+			}
+			imui::setSize(siz);
 		}
 
 		void audio() {
+			imui::setLayout(imui::VERTICAL);
+			imui::setSize(vec2(util::getResbbNDCAspect().size().x, .13f));
+			imui::setOffset(imui::state.size.ny());
 
+			float starty = util::getResbbNDCAspect()[1].y - headerHeight - imui::state.size.y / 2.f - headerAreaSpacing;
+
+			imui::setPos(vec2(
+				-centerSpacing - imui::state.size.x / 2.f,
+				starty
+			));
+
+			imui::labelBound(L"Volume:", vec2x(-1.f));
+
+
+			imui::setSize(vec2(.6f, .12f));
+			//imui::setOffset(imui::state.size.ny());
+
+			imui::setPos(vec2(centerSpacing + imui::state.size.x / 2.f, starty));
+
+
+			float vol = 0.f;
+			imui::sliderf("__parrvolume", &vol, 0.f, 1.f, false);
 		}
 
 		void vconsole() {

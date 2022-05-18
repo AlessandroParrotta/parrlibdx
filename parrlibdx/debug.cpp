@@ -24,6 +24,11 @@ namespace prb {
 
 		std::wstringstream tss;
 
+		InitMessages initMsgs = NONE;
+		bool isConsole = false;
+		bool showFPS = true;
+		bool drawRT = true;
+		bool drawMsgs = false;
 		bool drawStrs = true;
 		int deblimit = 5000;
 
@@ -73,6 +78,8 @@ namespace prb {
 		}
 
 		void debInit() {
+			isConsole = GetStdHandle(STD_INPUT_HANDLE) != NULL || GetStdHandle(STD_OUTPUT_HANDLE) != NULL;
+
 			//deb::out("initializing deb textrenderer\n");
 			//debtxr = TextRenderer({ getExeFolder() + "segoeui.ttf" }, 26);
 			debtxr = { { ("assets/fonts/segoeui.ttf") }, 18 }; //(int)(prc::res().y * 0.02f) };
@@ -105,41 +112,44 @@ namespace prb {
 		std::vector<std::wstring> getDebs(std::wstringstream& wss) {
 
 			std::wstring bigstr = wss.str();
-			bigstr = replaceCharWithString(bigstr, L'\t', L"    ");
+			//bigstr = replaceCharWithString(bigstr, L'\t', L"    ");
+			bigstr = stru::replace(bigstr, L"\t", L"    ");
 
-			//std::vector<std::wstring> strs = stru::toLines(wss.str());
+			std::vector<std::wstring> strs = stru::toLines(bigstr);
 			
-			//wss.clear();
-			//wss.str(L"");
+			wss.clear();
+			wss.str(L"");
 
-			std::vector<std::wstring> strs;
+			if (strs.size() == 1 && strs[0].length() == 0) strs.clear();
 
-			bool foundNewLine = false;
-			//int len = bigstr.length();
-			for (int i = 0; i < bigstr.length(); i++) {
-				if (bigstr[i] == L'\n') {
-					if (i == 0) { strs.push_back(L""); bigstr.erase(bigstr.begin(), bigstr.begin() + 1); i = 0; }
-					else {
-						strs.push_back(bigstr.substr(0, i));
-						bigstr.erase(bigstr.begin(), bigstr.begin() + i + 1);
-						i = 0;
-						//debssw << strs.back() << " " << bigstr << " " << bigstr.length(); msbinfow();
-					}
-					foundNewLine = true;
-				}
-			}
+			//std::vector<std::wstring> strs;
 
-			if (foundNewLine) {
-				wss.clear();
-				wss.str(L"");
-			}
+			//bool foundNewLine = false;
+			////int len = bigstr.length();
+			//for (int i = 0; i < bigstr.length(); i++) {
+			//	if (bigstr[i] == L'\n') {
+			//		if (i == 0) { strs.push_back(L""); bigstr.erase(bigstr.begin(), bigstr.begin() + 1); i = 0; }
+			//		else {
+			//			strs.push_back(bigstr.substr(0, i));
+			//			bigstr.erase(bigstr.begin(), bigstr.begin() + i + 1);
+			//			i = 0;
+			//			//debssw << strs.back() << " " << bigstr << " " << bigstr.length(); msbinfow();
+			//		}
+			//		foundNewLine = true;
+			//	}
+			//}
+
+			//if (foundNewLine) {
+			//	wss.clear();
+			//	wss.str(L"");
+			//}
 
 			return strs;
 		}
 
 		float strSpacing = .04f;
 		float strDebStart = .575f;
-		int startOffset = 0;
+		float startOffset = 0.f;
 		float offsetSpeed = 1.f;
 		int debDrawLimit = 40;
 		void drawDebStrs(vec2 screenSize) {
@@ -148,7 +158,7 @@ namespace prb {
 			std::lock_guard<std::mutex> lck(dmtx);
 
 			std::vector<std::wstring> rtdebs = getDebs(rtss);
-			if (drawStrs) {
+			if (drawStrs && drawRT) {
 				//for (int i = 0; i < rtdebs.size(); i++) {
 				//	debtxr.drawText(rtdebs[i], { -.99f, .95f - strSpacing * i }, screenSize);
 				//}
@@ -179,59 +189,73 @@ namespace prb {
 				}
 			}
 
-			if (input::getKey(VK_PRIOR)) { //page up
-				if (input::getKey(VK_SHIFT))startOffset = (std::min)(-(int)strs.size() + debDrawLimit, 0);
-				else if (input::getKey(VK_LCONTROL)) startOffset--;
-				else startOffset += offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
-			}
-			else if (input::getKey(VK_NEXT)) { //page down
-				if (input::getKey(VK_SHIFT))startOffset = 0;
-				else if (input::getKey(VK_LCONTROL)) startOffset++;
-				else startOffset -= offsetSpeed; offsetSpeed += .005f; rtss << "offset " << startOffset << "/" << strs.size() << "\n";
-			}
-			else offsetSpeed = 1.f;
-			//startOffset = outl::clamp(startOffset, (std::min)(-(int)strs.size() + debDrawLimit, 0), debDrawLimit);
-			startOffset = outl::clamp(startOffset, 0, strs.size());
+			if (drawStrs && drawMsgs) {
+				int displayableStrs = ceilf(((float)cst::resy() / 2.f) / (float)debtxr.getFontSize());
 
-			std::vector<std::wstring> debs = getDebs(ss.ss);
-			if (debs.size() > 0) strs.insert(strs.end(), debs.begin(), debs.end());
-			if (strs.size() > deblimit) strs.erase(strs.begin(), strs.end() - deblimit);
-			if (drawStrs) {
-				//int start = (std::max)((int)strs.size() - debDrawLimit + startOffset, 0);
-				//int end = (std::min)(start + debDrawLimit, (int)strs.size());
-				//for (int i = start; i < end; i++) {
-				//	//deb::out(strDebStart, " ", strSpacing, " ", strDebStart - strSpacing * (i - start), "\n");
-				//	debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) });
-				//}
+				//prt("displayable ", displayableStrs, "\n");
 
-				float aspectCorrect = cst::resaspect();
-				float scaleFactor = 1.f;
-				float cheight = (debtxr.getFontSize() + debtxr.getOutline()) / cst::res().y * (cst::res().aspectmaxv().y * 2.f);
-				
-				//float sliderVal = startOffset / 2.0f;
-				float sliderVal = 0.f;
+				float offsetSpeedAccel = 0.f;// 10000.f * tick::deltaTime * (1.f / offsetSpeed);
+				if (input::getKey(VK_PRIOR)) { //page up
+					if (input::getKey(VK_SHIFT))startOffset = (std::min)((int)strs.size() - displayableStrs, (int)strs.size());
+					else if (input::getKey(VK_LCONTROL)) startOffset--;
+					else startOffset += offsetSpeed * tick::deltaTime;
+					//prt("offset ", (int)strs.size() - debDrawLimit, "\n");
 
-				if (cheight * strs.size() < 1.0f) {
-					sliderVal = 0.0f;
+					offsetSpeed += offsetSpeedAccel;
+					//prt("offset ", startOffset, "/", strs.size(), " ", offsetSpeed, " ", (offsetSpeed * tick::deltaTime), "\n");
+				}
+				else if (input::getKey(VK_NEXT)) { //page down
+					if (input::getKey(VK_SHIFT))startOffset = 0;
+					else if (input::getKey(VK_LCONTROL)) startOffset++;
+					else startOffset -= offsetSpeed * tick::deltaTime;
+
+					offsetSpeed += offsetSpeedAccel;
+					//prt("offset ", startOffset, "/", strs.size(), " ", offsetSpeed, " ", (offsetSpeed * tick::deltaTime), "\n");
+				}
+				else offsetSpeed = 15.f;
+				//startOffset = outl::clamp(startOffset, (std::min)(-(int)strs.size() + debDrawLimit, 0), debDrawLimit);
+				startOffset = outl::clamp(startOffset, 0.f, strs.size() - displayableStrs);
+
+				std::vector<std::wstring> debs = getDebs(ss.ss);
+				if (debs.size() > 0) strs.insert(strs.end(), debs.begin(), debs.end());
+				if (strs.size() > deblimit) strs.erase(strs.begin(), strs.end() - deblimit);
+				if (drawStrs) {
+					//int start = (std::max)((int)strs.size() - debDrawLimit + startOffset, 0);
+					//int end = (std::min)(start + debDrawLimit, (int)strs.size());
+					//for (int i = start; i < end; i++) {
+					//	//deb::out(strDebStart, " ", strSpacing, " ", strDebStart - strSpacing * (i - start), "\n");
+					//	debtxr.drawText(strs[i], { -.99f, strDebStart - strSpacing * (i - start) });
+					//}
+
+					float aspectCorrect = cst::resaspect();
+					float scaleFactor = 1.f;
+					float cheight = (debtxr.getFontSize() + debtxr.getOutline()) / cst::res().y * (cst::res().aspectmaxv().y * 2.f);
+
+					//float sliderVal = startOffset / 2.0f;
+					float sliderVal = 0.f;
+
+					if (cheight * strs.size() < 1.0f) {
+						sliderVal = 0.0f;
+					}
+
+					startOffset = outl::fmax(startOffset, 0.f);
+
+					for (int i = strs.size() - 1 - ceilf(startOffset); i >= 0; i--) {
+						float ypos = util::getScreenBottom() + util::getPixel().y + cheight * (strs.size() - 1 - i - ceilf(startOffset)) - sliderVal;
+
+						if (ypos < util::getScreenBottom() - cheight) continue;
+						if (ypos >= 0.5f) break;
+
+
+						//debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(-1.f, ypos)));
+						debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(util::getScreenLeft(), ypos)));
+						//std::cout << "drawStr\n";
+					}
 				}
 
-				startOffset = outl::imax(startOffset, 0);
-
-				for (int i = strs.size() - 1 - startOffset; i >= 0; i--) {
-					float ypos = util::getScreenBottom()+util::getPixel().y + cheight * (strs.size() - 1 - i - startOffset) - sliderVal;
-
-					if (ypos < util::getScreenBottom() - cheight) continue;
-					if (ypos >= 0.0f) break;
-
-
-					//debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(-1.f, ypos)));
-					debtxr.drawWStringpx(strs[i], vec2(1.f), pmat3::translate(vec2(util::getScreenLeft(), ypos)));
-					//std::cout << "drawStr\n";
-				}
+				//for (int i = 0; i < 10; i++)
+				//	for (int j = 0; j < 10; j++) debtxr.drawText(vec2{ -.99f, strDebStart - strSpacing * (i + j - 0) }, "Hello ", i, " Hi ", j, " tryna get a longer string to see bugs");
 			}
-
-			//for (int i = 0; i < 10; i++)
-			//	for (int j = 0; j < 10; j++) debtxr.drawText(vec2{ -.99f, strDebStart - strSpacing * (i + j - 0) }, "Hello ", i, " Hi ", j, " tryna get a longer string to see bugs");
 		}
 
 		std::wstring tos(int i) { return std::to_wstring(i); }
@@ -278,7 +302,7 @@ namespace prb {
 			return conv.from_bytes(s);
 		}
 
-		std::string tos(std::wstring wstr) { return converter.to_bytes(wstr); }
+		std::string tos(std::wstring const& wstr) { return converter.to_bytes(wstr); }
 
 		void mbe(std::wstring const& errstr) { MessageBox(0, errstr.c_str(), L"Error", MB_ICONERROR); }
 		void mbe(std::string const& errstr) { mbe(tows(errstr)); }

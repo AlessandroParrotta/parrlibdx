@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../debug.h"
 #include "../textrenderer.h"
 
 namespace prb {
@@ -55,38 +54,12 @@ namespace prb {
 			template<typename... Args> inline void prw(Args... args) {
 				std::wstring str = stru::fmtw(args...);
 				if (str.length() == 0) return;
-
-				//int i = 0;
-				//while (i < str.length() || str.length() <= 0) {
-				//	if (str[i] == '\n') { 
-				//		deb::pr("adding '", stru::tostr(str.substr(0, i)), "'\n"); 
-				//		strs.push_back(str.substr(0, i)); 
-				//		if (i < str.length() - 1) str = str.substr(i + 1, str.length() - (i + 1)); 
-				//		else str = L""; i = 0; 
-				//	}
-				//	i++;
-				//}
-
-				//if (str.length() > 0) { strs.push_back(str); deb::pr("pushed back remaining str ", stru::tostr(str), "\n"); }
-
+				
 				str = stru::replace(str, L"\t", L"    ");
 
 				std::vector<std::wstring> lines = stru::split(str, L"\n");
 				if (strs.size() <= 0) strs.push_back(L""); if (lines.size() > 0) strs.back() += lines[0];
 				for (int i = 1; i < lines.size(); i++) strs.push_back(lines[i]);
-
-				//bool ended = false;
-				//while (!ended) {
-				//	bool reachedEnd = false;
-				//	for (int i = 0; i < str.length(); i++) {
-				//		if (str[i] == '\n') { deb::pr("adding ", stru::tostr(str.substr(0, i)), "\n"); strs.push_back(str.substr(0, i)); str = str.substr(i, str.length()-i); break; }
-				//		reachedEnd = i == str.length() - 1;
-				//	}
-
-				//	ended = str.length() == 0 || reachedEnd;
-				//}
-
-				//if (str.length() > 0) { strs.push_back(str); deb::pr("pushed back remaining str ", stru::tostr(str), "\n"); }
 			}
 
 			void exec(std::wstring const& line);

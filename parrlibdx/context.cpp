@@ -12,6 +12,7 @@
 #include "util.h"
 #include "debugmenu\debugmenu.h"
 #include "framebuffer.h"
+#include "audio\audio.h"
 
 namespace prb {
     namespace Context {
@@ -155,7 +156,7 @@ namespace prb {
             lerpFps += ((1. / deltaTime) - lerpFps) * 6.f * deltaTime;
             lerpDeltaTime += (deltaTime - lerpDeltaTime) * 6.f * deltaTime;
 
-            deb::prt("FPS: ", (int)lerpFps, " (", stru::ts::fromSec(lerpDeltaTime, 2), ")\n");
+            if(deb::showFPS) deb::prt("FPS: ", (int)lerpFps, " (", stru::ts::fromSec(lerpDeltaTime, 2), ")\n");
             //deb:prt("FPS: ", (1. / deltaTime), "\n");
 
 
@@ -587,7 +588,7 @@ namespace prb {
             defaultMode.dmSize = sizeof(DEVMODE);
 
             while (EnumDisplaySettings(NULL, iMode, &defaultMode)) {
-                deb::pr("display device ", defaultMode.dmFormName, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
+                if(deb::initMsgs == deb::VERBOSE) deb::pr("display device ", defaultMode.dmFormName, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
                 vidmodes.push_back(DeviceMode(vec2(defaultMode.dmPelsWidth, defaultMode.dmPelsHeight), defaultMode.dmDisplayFrequency, defaultMode));
                 
                 iMode++;
@@ -621,7 +622,7 @@ namespace prb {
                 if (!EnumDisplaySettings((LPWSTR)DisplayDevice.DeviceName, ENUM_REGISTRY_SETTINGS, &defaultMode)) deb::ss << "could not display settings\n";
                 else {
                     if (defaultMode.dmPelsWidth > 0 && defaultMode.dmPelsHeight > 0) {
-                        deb::pr("display device ", DispNum, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
+                        if (deb::initMsgs == deb::BASIC) deb::pr("display device ", DispNum, ": ", defaultMode.dmPelsWidth, "x", defaultMode.dmPelsHeight, "@", defaultMode.dmDisplayFrequency, "Hz (", defaultMode.dmDeviceName, ")", "\n");
                         vmodes.push_back(DeviceMode(vec2(defaultMode.dmPelsWidth, defaultMode.dmPelsHeight), defaultMode.dmDisplayFrequency, defaultMode));
                     }
                 }
@@ -729,6 +730,8 @@ namespace prb {
             //deb::out("inited D3D\n");
 
             input::addActiveLayer(INPUT_LAYER_DEFAULT);
+            
+            audio::init();
 
             util::init();
 
@@ -838,6 +841,8 @@ namespace prb {
             }
 
             deb::dispose();
+
+            audio::destroy();
 
             CleanD3D();
 

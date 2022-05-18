@@ -9,6 +9,7 @@
 
 #include <parrlibcore/stringutils.h>
 
+#include "debugmenu\debugmenu.h"
 #include "TextRenderer.h"
 
 namespace prb {
@@ -24,7 +25,17 @@ namespace prb {
 		extern bool drawStrs;
 		extern int deblimit;
 
+		enum InitMessages{
+			NONE,
+			BASIC,
+			VERBOSE
+		};
+		extern InitMessages initMsgs;
 
+		extern bool isConsole;
+		extern bool showFPS;
+		extern bool drawRT;
+		extern bool drawMsgs;
 		extern bool windowEnabled;
 
 		LRESULT sendMessage(std::wstring str);
@@ -103,11 +114,16 @@ namespace prb {
 		void msbinfow(std::wstring infostr);
 		void msbinfow();
 
+		std::string tos(std::wstring const& wstr);
+		template<typename... Args> void out(Args... args);
+
 		template<typename... Args> void pr(Args... args) { std::wstring wstr = stru::composew(args...);	ss << wstr; }
 		template<typename... Args> void prt(Args... args) { std::wstring wstr = stru::composew(args...);	rtss << wstr; }
-		
+		template<typename... Args> void log(Args... args) { std::wstring wstr = stru::composew(args...); if (isConsole) std::cout << tos(wstr); debugmenu::cons.prw(wstr); out(wstr); ss << wstr; }
+
 		template<typename... Args> void prln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	ss << wstr; }
 		template<typename... Args> void prtln(Args... args) { std::wstring wstr = stru::composew(args..., "\n");	rtss << wstr; }
+		template<typename... Args> void logln(Args... args) { std::wstring wstr = stru::composew(args..., "\n"); if (isConsole) std::cout << tos(wstr); debugmenu::cons.prw(wstr); out(wstr); ss << wstr; }
 
 		std::wstring tows(const wchar_t* c);
 		std::wstring tows(const char* c);
@@ -115,7 +131,7 @@ namespace prb {
 
 		std::u32string toutf32(const std::string& s);
 
-		std::string tos(std::wstring wstr);
+		std::string tos(std::wstring const& wstr);
 
 		void mbe(std::wstring const& errstr);
 		void mbe(std::string const& errstr);
