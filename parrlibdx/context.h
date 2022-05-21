@@ -49,6 +49,7 @@ namespace prb {
 		extern std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate;
 
 		extern bool inApp;
+		extern bool initAudio;
 
 		extern const int SCALING_MODE_ONE_TO_ONE;
 		extern const int SCALING_MODE_INTEGER_RATIO;

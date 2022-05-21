@@ -31,7 +31,9 @@ namespace prb {
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcPrec = [](HWND, UINT, WPARAM, LPARAM) {};
         std::function<void(HWND, UINT, WPARAM, LPARAM)> fWindowProcLate = [](HWND, UINT, WPARAM, LPARAM) {};
 
+
         bool inApp = false;
+        bool initAudio = true;
 
         const int SCALING_MODE_ONE_TO_ONE = 0;
         const int SCALING_MODE_INTEGER_RATIO = 1;
@@ -731,7 +733,7 @@ namespace prb {
 
             input::addActiveLayer(INPUT_LAYER_DEFAULT);
             
-            audio::init();
+           if(initAudio) audio::init();
 
             util::init();
 
@@ -842,7 +844,7 @@ namespace prb {
 
             deb::dispose();
 
-            audio::destroy();
+            if (initAudio) audio::destroy();
 
             CleanD3D();
 
