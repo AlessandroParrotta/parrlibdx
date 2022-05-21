@@ -146,7 +146,7 @@ namespace prb {
 
     void FrameBuffer::resize(vec2 res) {
         dispose();
-        FrameBuffer fb(res, format);
+        FrameBuffer fb(res, format, sampleCount, viewDimension, rtvDimension);
         fb.setFiltering(filtering);
         *this = fb;
     }
